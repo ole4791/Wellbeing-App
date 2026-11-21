@@ -65,7 +65,7 @@ body {
 }
 button { font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
 svg.ic { display: block; flex-shrink: 0; }
-main { padding: calc(env(safe-area-inset-top) + 8px) 16px calc(170px + env(safe-area-inset-bottom)); max-width: 680px; margin: 0 auto; }
+main { padding: calc(env(safe-area-inset-top) + 8px) 16px calc(110px + env(safe-area-inset-bottom)); max-width: 680px; margin: 0 auto; }
 .large-title { font-size: 34px; font-weight: 700; letter-spacing: .37px; margin: 36px 4px 0; }
 .date-sub { color: var(--secondary); font-size: 15px; margin: 2px 4px 0; letter-spacing: -.24px; }
 
@@ -191,15 +191,28 @@ input[type=date].inline { font: inherit; font-size: 17px; border: 0; background:
 .bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--material);
   -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
   border-top: .5px solid var(--sep); padding-bottom: env(safe-area-inset-bottom); }
-.quickbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 16px 6px; max-width: 680px; margin: 0 auto; }
+.quickbar { display: grid; grid-template-columns: 1fr 1fr 1fr 40px; gap: 8px; padding: 10px 12px 8px 16px; max-width: 680px; margin: 0 auto; align-items: center; }
 .qbtn { height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;
   font-size: 16px; font-weight: 600; letter-spacing: -.32px;
   background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); transition: transform .1s; }
 .qbtn:active { transform: scale(.96); background: color-mix(in srgb, var(--c) 25%, transparent); }
-.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 680px; margin: 0 auto; }
-.tabbar button { height: 50px; font-size: 10px; font-weight: 500; letter-spacing: .1px; color: #999;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
-.tabbar button.active { color: var(--accent); }
+.more-btn { width: 40px; height: 46px; border-radius: 12px; color: var(--secondary); display: flex; align-items: center; justify-content: center; }
+.more-btn:active, .more-btn.open { background: var(--fill); }
+/* ⋯-Menü (wie ein iOS-Kontextmenü) */
+.menu-backdrop { position: fixed; inset: 0; z-index: 35; display: none; }
+.menu-backdrop.open { display: block; }
+.menu { position: fixed; right: 12px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 36; width: 250px;
+  background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(30px); backdrop-filter: saturate(180%) blur(30px);
+  border-radius: 14px; box-shadow: 0 10px 40px rgba(0,0,0,.18); overflow: hidden;
+  transform-origin: bottom right; transform: scale(.85); opacity: 0; pointer-events: none; transition: all .22s cubic-bezier(.32,.72,0,1); }
+.menu.open { transform: none; opacity: 1; pointer-events: auto; }
+.menu button { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 12px 16px; font-size: 17px; text-align: left; }
+.menu button + button { border-top: .5px solid var(--sep); }
+.menu button:active { background: var(--fill); }
+.menu button.active { font-weight: 600; }
+.back-btn { display: inline-flex; align-items: center; gap: 2px; color: var(--accent); font-size: 17px; margin: 10px 0 0 -6px; }
+.back-btn[hidden] { display: none; }
+.back-btn + .large-title { margin-top: 6px; }
 
 /* =========================================================
    6. SHEET (Eingabefenster, fährt von unten hoch)
@@ -315,14 +328,16 @@ input[type=date].inline { font: inherit; font-size: 17px; border: 0; background:
 <header class="navbar" id="navbar"></header>
 
 <main>
+  <button class="back-btn" id="back" data-action="tab" data-tab="today" hidden></button>
   <h1 class="large-title" id="title">Heute</h1>
   <section id="view"></section>
 </main>
 
 <div class="bottom">
   <div class="quickbar" id="quickbar"></div>
-  <nav class="tabbar" id="tabbar"></nav>
 </div>
+<div class="menu-backdrop" id="menu-backdrop" data-action="close-menu"></div>
+<div class="menu" id="menu"></div>
 
 <div id="backdrop" class="backdrop" data-action="sheet-cancel"></div>
 <div id="sheet" class="sheet" aria-hidden="true">
@@ -350,6 +365,7 @@ const ICONS = {
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   more: '<circle cx="12" cy="12" r="9"/><circle cx="7.8" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="16.2" cy="12" r=".6" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  sliders: '<path d="M4 7h9.5M18.5 7H20M4 17h3.5M12.5 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="10" cy="17" r="2.3"/>',
   checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.8 2.8L16.2 9.8"/>',
   heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/>',
   sparkles: '<path d="M10 3.5l1.7 4.8 4.8 1.7-4.8 1.7L10 16.5l-1.7-4.8L3.5 10l4.8-1.7z"/><path d="M18 14l.9 2.1 2.1.9-2.1.9L18 20l-.9-2.1L15 17l2.1-.9z"/>',
@@ -570,19 +586,21 @@ const ui = {
   calSelected: dateKey(),
   draft: {},
 };
+// Menüpunkte hinter dem ⋯-Knopf
 const TABS = [
   { id: 'today', label: 'Heute', icon: 'sun' },
   { id: 'calendar', label: 'Kalender', icon: 'calendar' },
-  { id: 'goals', label: 'Ziele', icon: 'target' },
-  { id: 'more', label: 'Mehr', icon: 'more' },
+  { id: 'goals', label: 'Lebensziele', icon: 'target' },
+  { id: 'more', label: 'Einstellungen', icon: 'sliders' },
 ];
-const TITLES = { today: 'Heute', calendar: 'Kalender', goals: 'Lebensziele', more: 'Mehr' };
+const TITLES = { today: 'Heute', calendar: 'Kalender', goals: 'Lebensziele', more: 'Einstellungen' };
 
 function renderChrome() {
   $('#quickbar').innerHTML = `
     <button class="qbtn" style="--c:var(--c-done)" data-action="new-done">${icon('checkCircle', 20, 2)}Done</button>
     <button class="qbtn" style="--c:var(--c-grat)" data-action="new-gratitude">${icon('sparkles', 20, 2)}Dankbar</button>
-    <button class="qbtn" style="--c:var(--c-feel)" data-action="new-checkin">${icon('heart', 20, 2)}Gefühl</button>`;
+    <button class="qbtn" style="--c:var(--c-feel)" data-action="new-checkin">${icon('heart', 20, 2)}Gefühl</button>
+    <button class="more-btn" id="more-btn" data-action="open-menu" aria-label="Mehr">${icon('more', 26, 1.7)}</button>`;
   $('#lock-icon').innerHTML = icon('faceid', 40, 1.6);
 }
 
@@ -591,8 +609,15 @@ function render() {
   $('#title').textContent = TITLES[ui.tab];
   $('#navbar').textContent = TITLES[ui.tab];
   $('#view').innerHTML = views[ui.tab]();
-  $('#tabbar').innerHTML = TABS.map(t => `
-    <button data-action="tab" data-tab="${t.id}" class="${t.id === ui.tab ? 'active' : ''}">${icon(t.icon, 25, ui.tab === t.id ? 2.1 : 1.7)}${t.label}</button>`).join('');
+  $('#back').hidden = ui.tab === 'today';
+  $('#back').innerHTML = icon('chevronLeft', 22, 2.4) + 'Heute';
+  $('#menu').innerHTML = TABS.map(t => `
+    <button data-action="tab" data-tab="${t.id}" class="${t.id === ui.tab ? 'active' : ''}">${t.label}${icon(t.icon, 22, 1.8)}</button>`).join('');
+}
+
+function closeMenu() {
+  $('#menu').classList.remove('open'); $('#menu-backdrop').classList.remove('open');
+  const b = $('#more-btn'); if (b) b.classList.remove('open');
 }
 
 function secHead(title, count, action, day, color) {
@@ -804,7 +829,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.2 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.3 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
 }
 
 /* =========================================================
@@ -1393,7 +1418,9 @@ document.addEventListener('click', e => {
   const { action, id, day, value } = el.dataset;
 
   switch (action) {
-    case 'tab': ui.tab = el.dataset.tab; render(); window.scrollTo(0, 0); break;
+    case 'tab': closeMenu(); ui.tab = el.dataset.tab; render(); window.scrollTo(0, 0); break;
+    case 'open-menu': if ($('#menu').classList.contains('open')) closeMenu(); else { $('#menu').classList.add('open'); $('#menu-backdrop').classList.add('open'); $('#more-btn').classList.add('open'); } break;
+    case 'close-menu': closeMenu(); break;
     case 'cal-prev': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() - 1, 1); render(); break;
     case 'cal-next': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() + 1, 1); render(); break;
     case 'select-day': ui.calSelected = day; render(); break;
