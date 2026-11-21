@@ -30,6 +30,8 @@
   --material: rgba(249,249,249,.82);
   --accent: #007AFF;
   --green: #34C759; --pink: #FF2D55; --orange: #FF9500; --red: #FF3B30; --indigo: #5856D6;
+  /* Farben der drei Eintragsarten: bewusst neutral, keine Ampel */
+  --c-done: #007AFF; --c-grat: #30B0C7; --c-feel: #AF52DE;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -46,6 +48,7 @@
     --material: rgba(29,29,31,.8);
     --accent: #0A84FF;
     --green: #30D158; --pink: #FF375F; --orange: #FF9F0A; --red: #FF453A; --indigo: #5E5CE6;
+    --c-done: #0A84FF; --c-grat: #40C8E0; --c-feel: #BF5AF2;
   }
 }
 
@@ -269,6 +272,35 @@ input[type=date].inline { font: inherit; font-size: 17px; border: 0; background:
   opacity: 0; transition: all .3s cubic-bezier(.32,.72,0,1); z-index: 200; pointer-events: none; white-space: nowrap; }
 .toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
 .toast svg { color: var(--green); }
+
+/* =========================================================
+   9. STARTSEITE: Tageskarte mit Begrüßung, Zahlen, Woche
+   ========================================================= */
+.hero { margin-top: 16px; border-radius: 16px; padding: 18px 16px 14px; position: relative; overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 0% 0%, color-mix(in srgb, var(--c-done) 16%, transparent), transparent 60%),
+    radial-gradient(120% 100% at 100% 0%, color-mix(in srgb, var(--c-feel) 14%, transparent), transparent 60%),
+    radial-gradient(120% 100% at 50% 120%, color-mix(in srgb, var(--c-grat) 14%, transparent), transparent 60%),
+    var(--card); }
+.hero-greet { font-size: 22px; font-weight: 700; letter-spacing: .35px; }
+.hero-prompt { margin-top: 4px; font-size: 15px; color: var(--secondary); letter-spacing: -.24px; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.stat { background: color-mix(in srgb, var(--card) 70%, transparent); border-radius: 12px; padding: 10px 10px 9px;
+  display: flex; flex-direction: column; gap: 2px; box-shadow: inset 0 0 0 .5px var(--sep); }
+.stat-top { display: flex; align-items: center; justify-content: space-between; color: var(--c); }
+.stat b { font-size: 28px; font-weight: 700; letter-spacing: .3px; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1.1; }
+.stat .emo { font-size: 26px; line-height: 1.15; }
+.stat small { font-size: 12px; color: var(--secondary); letter-spacing: 0; }
+.week { display: grid; grid-template-columns: repeat(7, 1fr); margin-top: 14px; gap: 2px; }
+.wday { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 4px 0; border-radius: 10px; }
+.wday:active { background: var(--fill); }
+.wday small { font-size: 11px; color: var(--secondary); font-weight: 600; text-transform: uppercase; }
+.wday .wdot { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 17px; background: var(--fill); }
+.wday.today small { color: var(--text); }
+.wday.today .wdot { box-shadow: 0 0 0 2px var(--text); }
+.wday .wbar { display: flex; gap: 2px; height: 4px; }
+.wday .wbar i { width: 4px; height: 4px; border-radius: 50%; background: var(--c-done); }
 </style>
 </head>
 <body>
@@ -409,7 +441,25 @@ const MOODS = [
 const MOOD_COLORS = { 1: '#FF3B30', 2: '#FF9500', 3: '#FFCC00', 4: '#34C759', 5: '#00C7BE' };
 const LIFE_AREAS = ['Gesundheit', 'Beziehungen', 'Karriere', 'Persönliches', 'Finanzen', 'Freizeit'];
 const GOAL_STATUS = { active: 'Aktiv', done: 'Erreicht', paused: 'Pausiert' };
-const GRAT_COLOR = '#FF9500';
+const GRAT_COLOR = 'var(--c-grat)';
+
+// Kleine Impulse für die Startseite (wechseln täglich)
+const PROMPTS = [
+  'Was hat dir heute Energie gegeben?',
+  'Welcher kleine Moment war heute gut?',
+  'Worauf bist du heute stolz?',
+  'Wem möchtest du heute danken?',
+  'Was hast du heute für dich getan?',
+  'Was hat dich heute zum Lächeln gebracht?',
+  'Was darf heute einfach gut genug sein?',
+  'Welcher Schritt hat dich heute weitergebracht?',
+  'Was hast du heute Neues gelernt?',
+  'Wo warst du heute ganz bei dir?',
+  'Was möchtest du morgen beibehalten?',
+  'Welches Gefühl war heute am stärksten?',
+  'Wofür war heute Zeit, wofür nicht?',
+  'Was hat sich heute leicht angefühlt?',
+];
 
 /* =========================================================
    3. DATEN LADEN & SPEICHERN (nur auf diesem Gerät)
@@ -427,7 +477,7 @@ function emptyData() {
     favorites: [],    // { id, text, category, goalId }
     customEmotions: [],
     categories: null, // { id, name, icon, color, hidden }
-    settings: { lockEnabled: false, credentialId: null, graceMinutes: 5, lastBackup: null },
+    settings: { lockEnabled: false, credentialId: null, graceMinutes: 5, lastBackup: null, name: '' },
   };
 }
 
@@ -530,9 +580,9 @@ const TITLES = { today: 'Heute', calendar: 'Kalender', goals: 'Lebensziele', mor
 
 function renderChrome() {
   $('#quickbar').innerHTML = `
-    <button class="qbtn" style="--c:var(--green)" data-action="new-done">${icon('checkCircle', 20, 2)}Done</button>
-    <button class="qbtn" style="--c:var(--pink)" data-action="new-checkin">${icon('heart', 20, 2)}Gefühl</button>
-    <button class="qbtn" style="--c:var(--orange)" data-action="new-gratitude">${icon('sparkles', 20, 2)}Dankbar</button>`;
+    <button class="qbtn" style="--c:var(--c-done)" data-action="new-done">${icon('checkCircle', 20, 2)}Done</button>
+    <button class="qbtn" style="--c:var(--c-grat)" data-action="new-gratitude">${icon('sparkles', 20, 2)}Dankbar</button>
+    <button class="qbtn" style="--c:var(--c-feel)" data-action="new-checkin">${icon('heart', 20, 2)}Gefühl</button>`;
   $('#lock-icon').innerHTML = icon('faceid', 40, 1.6);
 }
 
@@ -545,9 +595,9 @@ function render() {
     <button data-action="tab" data-tab="${t.id}" class="${t.id === ui.tab ? 'active' : ''}">${icon(t.icon, 25, ui.tab === t.id ? 2.1 : 1.7)}${t.label}</button>`).join('');
 }
 
-function secHead(title, count, action, day) {
+function secHead(title, count, action, day, color) {
   return `<div class="sec-head"><h2>${title}</h2>${count != null ? `<span class="sec-count">${count}</span>` : ''}
-    ${action ? `<button class="sec-add" data-action="${action}" ${day ? `data-day="${day}"` : ''} aria-label="Hinzufügen">${icon('plus', 18, 2.4)}</button>` : ''}</div>`;
+    ${action ? `<button class="sec-add" ${color ? `style="color:${color}"` : ''} data-action="${action}" ${day ? `data-day="${day}"` : ''} aria-label="Hinzufügen">${icon('plus', 18, 2.4)}</button>` : ''}</div>`;
 }
 
 function cell({ lead = '', title, sub = '', acc = '', action = '', attrs = '', cls = '' }) {
@@ -563,13 +613,7 @@ const chevron = () => icon('chevron', 14, 2.6);
 // --- Heute ---
 function renderToday() {
   const k = dateKey();
-  let html = `<p class="date-sub">${esc(fmtDayLong(k))}</p>`;
-  const standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
-  if (!standalone && !localStorage.getItem(HINT_KEY)) {
-    html += `<div class="hint">${badge('phone', 'var(--accent)')}<div class="hint-body"><strong>Zum Home-Bildschirm hinzufügen</strong><br>
-      <span class="muted">In Safari auf Teilen → „Zum Home-Bildschirm“ tippen. Daten im Safari-Tab und in der App sind getrennt.</span></div>
-      <button class="icon-btn" data-action="hide-hint" aria-label="Schließen">${icon('xmark', 16, 2.4)}</button></div>`;
-  }
+  let html = `<p class="date-sub">${esc(fmtDayLong(k))}</p>` + renderHero(k);
   const entries = data.dones.length + data.checkins.length;
   const lb = data.settings.lastBackup;
   if (entries >= 10 && (!lb || daysSince(lb) >= 14)) {
@@ -579,29 +623,60 @@ function renderToday() {
   return html + renderDay(k, true);
 }
 
+// Tageskarte: Begrüßung, Impuls, Zahlen des Tages, letzte 7 Tage
+function renderHero(k) {
+  const h = new Date().getHours();
+  const greet = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Hallo' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
+  const name = (data.settings.name || '').trim();
+  const dayOfYear = Math.floor((parseKey(k) - new Date(parseKey(k).getFullYear(), 0, 0)) / 86400000);
+  const prompt = PROMPTS[dayOfYear % PROMPTS.length];
+  const mood = dayMood(k);
+
+  const stat = (c, ic, value, label) => `<div class="stat" style="--c:${c}"><div class="stat-top">${value}${icon(ic, 18, 2)}</div><small>${label}</small></div>`;
+  const stats = stat('var(--c-done)', 'checkCircle', `<b>${donesOn(k).length}</b>`, 'Erledigt')
+    + stat('var(--c-grat)', 'sparkles', `<b>${gratitudeOn(k).length}</b>`, 'Dankbar')
+    + stat('var(--c-feel)', 'heart', mood ? `<span class="emo">${MOODS[mood - 1].emoji}</span>` : `<b>–</b>`, 'Stimmung');
+
+  let week = '';
+  for (let i = 6; i >= 0; i--) {
+    const d = parseKey(k); d.setDate(d.getDate() - i);
+    const dk = dateKey(d), m = dayMood(dk), n = donesOn(dk).length;
+    week += `<button class="wday ${i === 0 ? 'today' : ''}" data-action="goto-day" data-day="${dk}">
+      <small>${d.toLocaleDateString('de-DE', { weekday: 'short' }).slice(0, 2)}</small>
+      <span class="wdot">${m ? MOODS[m - 1].emoji : ''}</span>
+      <span class="wbar">${'<i></i>'.repeat(Math.min(n, 3))}</span></button>`;
+  }
+  return `<div class="hero">
+    <div class="hero-greet">${greet}${name ? ', ' + esc(name) : ''}</div>
+    <div class="hero-prompt">${esc(prompt)}</div>
+    <div class="stats">${stats}</div>
+    <div class="week">${week}</div>
+  </div>`;
+}
+
 function renderDay(k, isToday) {
   const dones = donesOn(k), cis = checkinsOn(k), grats = gratitudeOn(k), r = data.reflections[k];
   let html = '';
 
-  html += secHead('Erledigt', dones.length || null, 'new-done', k);
+  html += secHead('Erledigt', dones.length || null, 'new-done', k, 'var(--c-done)');
   html += `<div class="list">${dones.length ? dones.map(d => cell({
     lead: catBadge(d.category), title: esc(d.text),
     sub: esc(d.category) + (d.goalId ? ' · ' + esc(goalTitle(d.goalId)) : ''),
     acc: chevron(), action: 'edit-done', attrs: `data-id="${d.id}"`,
   })).join('') : emptyCell('Noch nichts eingetragen.')}</div>`;
 
-  html += secHead('Gefühle', cis.length || null, isToday ? 'new-checkin' : '');
+  html += secHead('Dankbar für', grats.length || null, 'new-gratitude', k, 'var(--c-grat)');
+  html += `<div class="list">${grats.length ? grats.map(g => cell({
+    lead: badge('sparkles', GRAT_COLOR), title: esc(g.text), acc: chevron(), action: 'new-gratitude', attrs: `data-day="${k}"`,
+  })).join('') : emptyCell('Wofür bist du heute dankbar?')}</div>`;
+
+  html += secHead('Gefühle', cis.length || null, isToday ? 'new-checkin' : '', null, 'var(--c-feel)');
   html += `<div class="list">${cis.length ? cis.map(c => cell({
     lead: `<span class="emoji-lead">${MOODS[c.mood - 1].emoji}</span>`,
     title: c.emotions.length ? c.emotions.map(esc).join(', ') : `Stimmung ${c.mood} von 5`,
     sub: `${fmtTime(c.ts)} Uhr${c.triggers.length ? ' · ' + c.triggers.map(esc).join(', ') : ''}${c.note ? ' · ' + esc(truncate(c.note, 36)) : ''}`,
     acc: chevron(), action: 'edit-checkin', attrs: `data-id="${c.id}"`,
   })).join('') : emptyCell(isToday ? 'Wie fühlst du dich gerade?' : 'Kein Check-in an diesem Tag.')}</div>`;
-
-  html += secHead('Dankbar für', grats.length || null, 'new-gratitude', k);
-  html += `<div class="list">${grats.length ? grats.map(g => cell({
-    lead: badge('sparkles', GRAT_COLOR), title: esc(g.text), acc: chevron(), action: 'new-gratitude', attrs: `data-day="${k}"`,
-  })).join('') : emptyCell('Wofür bist du heute dankbar?')}</div>`;
 
   html += secHead('Tagesfazit');
   if (r) {
@@ -690,6 +765,12 @@ function renderMore() {
     : emptyCell('Im Done-Fenster auf den Stern tippen, um einen Eintrag als Favorit zu merken.');
 
   return `
+    <div class="group-label">Persönlich</div>
+    <div class="list">
+      <div class="cell"><span class="cell-lead">${badge('people', 'var(--c-done)')}</span><span class="cell-body"><span class="cell-text"><span class="cell-title">Dein Name</span></span>
+        <input class="field" data-change="name" style="text-align:right;padding:0;min-height:0;color:var(--secondary)" placeholder="für die Begrüßung" value="${esc(s.name || '')}" autocomplete="off" enterkeyhint="done"></span></div>
+    </div>
+
     <div class="group-label">Sicherheit</div>
     <div class="list">
       <div class="cell"><span class="cell-lead">${badge('faceid', '#34C759')}</span><span class="cell-body"><span class="cell-text"><span class="cell-title">Face ID-Sperre</span></span>
@@ -723,7 +804,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.1 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.2 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
 }
 
 /* =========================================================
@@ -1316,6 +1397,7 @@ document.addEventListener('click', e => {
     case 'cal-prev': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() - 1, 1); render(); break;
     case 'cal-next': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() + 1, 1); render(); break;
     case 'select-day': ui.calSelected = day; render(); break;
+    case 'goto-day': { const d = parseKey(day); ui.tab = 'calendar'; ui.calSelected = day; ui.calMonth = new Date(d.getFullYear(), d.getMonth(), 1); render(); window.scrollTo(0, 0); break; }
     case 'hide-hint': localStorage.setItem(HINT_KEY, '1'); render(); break;
 
     case 'sheet-cancel': if (sheetDismissSaves && sheetSave) sheetSave(); else closeSheet(); break;
@@ -1452,10 +1534,12 @@ document.addEventListener('keydown', e => {
     'g-title': () => focusNoScroll($('#g-desc')),
     'cat-name': () => $('#cat-name').blur() };
   if (idMap[e.target.id]) { e.preventDefault(); idMap[e.target.id](); }
+  if (e.target.dataset.change === 'name') { e.preventDefault(); e.target.blur(); }
 });
 
 document.addEventListener('change', e => {
   const t = e.target;
+  if (t.dataset.change === 'name') { data.settings.name = t.value.trim(); save(); }
   if (t.dataset.change === 'grace') { data.settings.graceMinutes = Number(t.value); save(); }
   if (t.dataset.change === 'lock') { if (t.checked) enableLock(); else disableLock(); }
   if (t.dataset.change === 'cat-visible') {
