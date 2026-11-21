@@ -7,216 +7,294 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Wellbeing">
-<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
 <title>Wellbeing</title>
 <style>
 /* =========================================================
-   1. FARBEN & GRUNDLAYOUT (hell + dunkel, iOS-Stil)
+   1. iOS-SYSTEMFARBEN (hell + dunkel)
    ========================================================= */
 :root {
-  --bg: #f2f2f7; --card: #ffffff; --text: #000000; --muted: #6e6e73;
-  --sep: rgba(60,60,67,.16); --chip: #e5e5ea; --accent: #30a46c;
-  --pink: #e93d82; --danger: #e5484d; --bar: rgba(249,249,251,.88);
+  --bg: #F2F2F7;            /* systemGroupedBackground */
+  --card: #FFFFFF;          /* secondarySystemGroupedBackground */
+  --sheet-bg: #F2F2F7;
+  --sheet-card: #FFFFFF;
+  --text: #000000;
+  --secondary: rgba(60,60,67,.6);
+  --tertiary: rgba(60,60,67,.3);
+  --sep: rgba(60,60,67,.29);
+  --fill: rgba(120,120,128,.12);
+  --fill-strong: rgba(120,120,128,.2);
+  --material: rgba(249,249,249,.82);
+  --accent: #007AFF;
+  --green: #34C759; --pink: #FF2D55; --orange: #FF9500; --red: #FF3B30; --indigo: #5856D6;
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg: #000000; --card: #1c1c1e; --text: #ffffff; --muted: #98989f;
-    --sep: rgba(84,84,88,.55); --chip: #2c2c2e; --bar: rgba(22,22,24,.88);
+    --bg: #000000;
+    --card: #1C1C1E;
+    --sheet-bg: #1C1C1E;
+    --sheet-card: #2C2C2E;
+    --text: #FFFFFF;
+    --secondary: rgba(235,235,245,.6);
+    --tertiary: rgba(235,235,245,.3);
+    --sep: rgba(84,84,88,.65);
+    --fill: rgba(118,118,128,.24);
+    --fill-strong: rgba(118,118,128,.36);
+    --material: rgba(29,29,31,.8);
+    --accent: #0A84FF;
+    --green: #30D158; --pink: #FF375F; --orange: #FF9F0A; --red: #FF453A; --indigo: #5E5CE6;
   }
 }
+
+/* =========================================================
+   2. GRUNDLAYOUT & TYPOGRAFIE (SF Pro über die Systemschrift)
+   ========================================================= */
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  font-size: 17px; line-height: 1.35;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-text-size-adjust: 100%;
-  padding-top: env(safe-area-inset-top);
+  font-size: 17px; line-height: 1.29; letter-spacing: -.41px;
+  -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
 }
-html.noscroll, html.noscroll body { overflow: hidden; }
-button { font: inherit; color: inherit; cursor: pointer; }
-main { padding: 0 16px calc(150px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
-h1 { font-size: 34px; font-weight: 700; margin: 12px 0 0; letter-spacing: -.5px; }
-.subtitle { color: var(--muted); margin: 2px 0 8px; font-size: 15px; }
-.muted { color: var(--muted); font-weight: 400; }
-small { font-size: 13px; }
+button { font: inherit; color: inherit; letter-spacing: inherit; cursor: pointer; background: none; border: 0; padding: 0; }
+svg.ic { display: block; flex-shrink: 0; }
+main { padding: calc(env(safe-area-inset-top) + 8px) 16px calc(170px + env(safe-area-inset-bottom)); max-width: 680px; margin: 0 auto; }
+.large-title { font-size: 34px; font-weight: 700; letter-spacing: .37px; margin: 36px 4px 0; }
+.date-sub { color: var(--secondary); font-size: 15px; margin: 2px 4px 0; letter-spacing: -.24px; }
+
+/* Kleine Kopfzeile, die beim Scrollen erscheint */
+.navbar { position: fixed; top: 0; left: 0; right: 0; z-index: 30;
+  padding: calc(env(safe-area-inset-top) + 11px) 16px 11px; text-align: center;
+  font-weight: 600; background: var(--material);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: .5px solid var(--sep); opacity: 0; pointer-events: none; transition: opacity .2s; }
+.navbar.show { opacity: 1; }
 
 /* =========================================================
-   2. KARTEN, LISTEN, ABSCHNITTE
+   3. ABSCHNITTE & GRUPPIERTE LISTEN (wie Einstellungen / Health)
    ========================================================= */
-.section { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
-  color: var(--muted); margin: 22px 4px 8px; display: flex; gap: 6px; align-items: center; }
-.count { background: var(--chip); border-radius: 999px; padding: 0 7px; font-size: 12px; }
-.card { background: var(--card); border-radius: 12px; overflow: hidden; }
-.card.pad { padding: 14px; }
-.row { display: flex; gap: 12px; align-items: center; width: 100%; padding: 11px 14px;
-  background: none; border: 0; border-bottom: 1px solid var(--sep); text-align: left; }
-.row:last-child { border-bottom: 0; }
-.row:active { background: var(--chip); }
-.row.static:active { background: none; }
-.row-icon { font-size: 22px; width: 28px; text-align: center; flex-shrink: 0; }
-.row-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
-.row-main small { color: var(--muted); }
-.chev { color: var(--muted); font-size: 22px; }
-.empty { padding: 14px; color: var(--muted); font-size: 15px; }
-.cta { width: 100%; border: 0; padding: 16px; font-weight: 600; color: var(--accent); text-align: center; }
-.reflection { width: 100%; border: 0; text-align: left; padding: 14px; }
-.reflection p { margin: 8px 0 0; }
-.refl-head { display: flex; gap: 12px; align-items: center; }
-.refl-head small { display: block; color: var(--muted); }
-.big-emoji { font-size: 34px; }
-.hint { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-top: 12px;
-  font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
-.hint button.x { background: none; border: 0; color: var(--muted); font-size: 20px; padding: 0 4px; margin-left: auto; }
-.hint .link { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 0; }
+.sec-head { display: flex; align-items: center; gap: 8px; margin: 28px 4px 8px; }
+.sec-head h2 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: .38px; }
+.sec-count { color: var(--secondary); font-size: 15px; font-variant-numeric: tabular-nums; }
+.sec-add { margin-left: auto; width: 30px; height: 30px; border-radius: 15px; background: var(--fill); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; }
+.sec-add:active { background: var(--fill-strong); }
+.group-label { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter-spacing: -.08px; margin: 26px 16px 7px; }
+.group-foot { font-size: 13px; color: var(--secondary); letter-spacing: -.08px; margin: 7px 16px 0; line-height: 1.38; }
+
+.list { background: var(--card); border-radius: 10px; overflow: hidden; }
+.sheet .list { background: var(--sheet-card); }
+.cell { display: flex; align-items: stretch; width: 100%; padding-left: 16px; text-align: left; min-height: 44px; position: relative; }
+button.cell:active, .cell.tap:active { background: var(--fill); }
+.cell-lead { display: flex; align-items: center; margin-right: 12px; }
+.cell-body { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 11px 16px 11px 0; }
+.cell:not(:last-child) .cell-body { border-bottom: .5px solid var(--sep); }
+.cell-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.cell-title { overflow-wrap: anywhere; }
+.cell-sub { font-size: 15px; color: var(--secondary); letter-spacing: -.24px; }
+.cell-acc { color: var(--tertiary); display: flex; align-items: center; gap: 8px; font-size: 17px; }
+.cell-acc .val { color: var(--secondary); }
+.cell.empty .cell-body { color: var(--secondary); font-size: 15px; }
+.cell.action .cell-title { color: var(--accent); }
+.cell.destructive .cell-title { color: var(--red); }
+.emoji-lead { font-size: 26px; width: 29px; text-align: center; line-height: 1; }
+
+/* Icon-Quadrate wie in der Einstellungen-App */
+.badge { width: 29px; height: 29px; border-radius: 7px; background: var(--c, var(--accent)); color: #fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.badge.sm { width: 22px; height: 22px; border-radius: 6px; }
+
+.icon-btn { width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: var(--secondary); }
+.icon-btn:active { background: var(--fill); }
+.icon-btn.on { color: #FF9F0A; }
+
+.reflection-text { margin-top: 4px; font-size: 15px; color: var(--secondary); letter-spacing: -.24px; }
+
+.hint { background: var(--card); border-radius: 10px; padding: 12px 14px; margin-top: 14px; font-size: 15px;
+  letter-spacing: -.24px; display: flex; gap: 12px; align-items: flex-start; }
+.hint .badge { margin-top: 1px; }
+.hint-body { flex: 1; }
+.link-btn { color: var(--accent); font-weight: 600; }
 
 /* =========================================================
-   3. BUTTONS, CHIPS, EINGABEFELDER
+   4. EINGABEN, CHIPS, SKALEN, SCHALTER
    ========================================================= */
-.btn { border: 0; border-radius: 12px; padding: 13px 16px; background: var(--accent); color: #fff; font-weight: 600; }
-.btn.secondary { background: var(--card); color: var(--accent); }
-.btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-.btn.small { padding: 8px 12px; font-size: 15px; }
-.btn.full { width: 100%; margin-top: 10px; display: block; }
-.btn:active { opacity: .7; }
+.field { width: 100%; font: inherit; font-size: 17px; letter-spacing: -.41px; padding: 11px 16px; border: 0; outline: none;
+  background: transparent; color: var(--text); min-height: 44px; -webkit-appearance: none; appearance: none; }
+textarea.field { resize: none; min-height: 96px; line-height: 1.35; }
+.field::placeholder { color: var(--tertiary); }
+.input-row { display: flex; align-items: center; padding-right: 6px; }
+.input-row .field { flex: 1; }
+.send-btn { width: 32px; height: 32px; border-radius: 16px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.send-btn:disabled { background: var(--fill-strong); }
+select.inline { font: inherit; font-size: 17px; border: 0; background: transparent; color: var(--secondary); text-align: right;
+  -webkit-appearance: none; appearance: none; padding: 0; max-width: 60%; outline: none; }
+input[type=date].inline { font: inherit; font-size: 17px; border: 0; background: var(--fill); color: var(--text);
+  border-radius: 7px; padding: 5px 10px; -webkit-appearance: none; appearance: none; min-height: 34px; }
+
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { border: 0; border-radius: 999px; padding: 8px 13px; background: var(--chip); font-size: 15px; }
-.chip.on { background: var(--c, var(--accent)); color: #fff; }
-.chip.quick { background: var(--card); border: 1px solid var(--sep); }
-.chip.quick:active { background: var(--accent); color: #fff; }
-.input { width: 100%; font: inherit; font-size: 16px; padding: 12px; margin: 4px 0;
-  border-radius: 10px; border: 1px solid var(--sep); background: var(--card); color: var(--text); min-height: 46px; }
-textarea.input { resize: vertical; }
-.label { font-size: 13px; font-weight: 600; color: var(--muted); margin: 18px 2px 8px; }
-.add-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
-.add-row .input { margin: 0; }
-.check { display: flex; gap: 10px; align-items: center; margin-top: 18px; font-size: 15px; }
-.check input { width: 22px; height: 22px; }
-.moods, .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-.scale-btn { border: 0; border-radius: 12px; background: var(--chip); padding: 9px 0; font-size: 17px; }
-.scale-btn .emo { display: block; font-size: 30px; line-height: 1.1; }
-.scale-btn small { color: var(--muted); }
-.scale-btn.on { background: var(--c, var(--accent)); color: #fff; }
-.scale-btn.on small { color: #fff; }
-.group { margin-bottom: 12px; }
-.group-name { font-size: 13px; font-weight: 700; margin: 0 2px 6px; }
-.setting { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 0; }
-.setting + .setting { border-top: 1px solid var(--sep); padding-top: 12px; margin-top: 6px; }
-.setting small { display: block; color: var(--muted); }
-.setting select { font-size: 16px; padding: 6px; border-radius: 8px; border: 1px solid var(--sep); background: var(--card); color: var(--text); }
-.steps { margin: 8px 0 0; padding-left: 20px; font-size: 15px; }
-.steps li { margin-bottom: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: 999px;
+  background: var(--card); font-size: 15px; letter-spacing: -.24px; border: .5px solid var(--sep); }
+.sheet .chip { background: var(--sheet-card); }
+.chip .dot { width: 8px; height: 8px; border-radius: 4px; background: var(--c, var(--accent)); }
+.chip .ck { display: none; }
+.chip.on { background: color-mix(in srgb, var(--c, var(--accent)) 16%, var(--sheet-card)); border-color: transparent;
+  color: color-mix(in srgb, var(--c, var(--accent)) 82%, var(--text)); font-weight: 600; }
+.chip.on .ck { display: block; }
+.chip.on .dot { display: none; }
+.chip:active { transform: scale(.97); }
+.chip-badge { width: 20px; height: 20px; border-radius: 5px; background: var(--c); color: #fff; display: flex; align-items: center; justify-content: center; }
+
+.sheet-sec { margin: 22px 0 0; }
+.sheet-label { font-size: 13px; color: var(--secondary); text-transform: uppercase; letter-spacing: -.08px; margin: 0 16px 7px; }
+.sheet-label .opt { text-transform: none; }
+.sheet-note { font-size: 13px; color: var(--secondary); margin: 7px 16px 0; letter-spacing: -.08px; }
+.emo-group { margin-bottom: 14px; }
+.emo-group-name { font-size: 13px; font-weight: 600; color: var(--secondary); margin: 0 2px 7px; }
+
+.scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.scale-btn { background: var(--sheet-card); border-radius: 12px; padding: 10px 0 8px; display: flex; flex-direction: column;
+  align-items: center; gap: 2px; font-size: 17px; font-variant-numeric: tabular-nums; box-shadow: inset 0 0 0 .5px var(--sep); }
+.scale-btn .emo { font-size: 30px; line-height: 1.1; }
+.scale-btn small { font-size: 12px; color: var(--secondary); }
+.scale-btn.on { background: color-mix(in srgb, var(--c, var(--accent)) 18%, var(--sheet-card)); box-shadow: inset 0 0 0 2px var(--c, var(--accent)); font-weight: 600; }
+.scale-btn:active { transform: scale(.96); }
+
+/* iOS-Schalter */
+.switch { -webkit-appearance: none; appearance: none; width: 51px; height: 31px; border-radius: 16px; background: var(--fill-strong);
+  position: relative; transition: background .2s; flex-shrink: 0; margin: 0; cursor: pointer; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff;
+  box-shadow: 0 3px 8px rgba(0,0,0,.15), 0 1px 1px rgba(0,0,0,.16); transition: transform .2s; }
+.switch:checked { background: var(--green); }
+.switch:checked::after { transform: translateX(20px); }
+
+.icon-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; padding: 14px; }
+.icon-pick { aspect-ratio: 1; border-radius: 12px; background: var(--fill); display: flex; align-items: center; justify-content: center; color: var(--secondary); }
+.icon-pick.on { background: var(--c); color: #fff; }
+.color-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; padding: 14px; }
+.color-pick { aspect-ratio: 1; border-radius: 50%; background: var(--c); }
+.color-pick.on { box-shadow: 0 0 0 3px var(--sheet-card), 0 0 0 5px var(--c); }
+
 .shake { animation: shake .35s; }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 
 /* =========================================================
-   4. SCHNELLEINTRAG-LEISTE & TAB-LEISTE (unten, daumenfreundlich)
+   5. SCHNELLEINTRAG & TAB-LEISTE (Material-Hintergrund)
    ========================================================= */
-.quickbar { position: fixed; left: 0; right: 0; bottom: calc(54px + env(safe-area-inset-bottom));
-  display: flex; gap: 12px; padding: 10px 16px; background: var(--bar);
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); z-index: 20; }
-.qbtn { flex: 1; height: 52px; border: 0; border-radius: 14px; color: #fff; font-size: 18px; font-weight: 600; }
-.qbtn.done { background: var(--accent); }
-.qbtn.feel { background: var(--pink); }
-.qbtn:active { transform: scale(.97); }
-.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
-  padding-bottom: env(safe-area-inset-bottom); background: var(--bar); border-top: 1px solid var(--sep);
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); z-index: 20; }
-.tabbar button { background: none; border: 0; height: 54px; font-size: 11px; color: var(--muted);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
-.tabbar button span { font-size: 22px; filter: grayscale(1); opacity: .6; }
-.tabbar button.active { color: var(--accent); font-weight: 600; }
-.tabbar button.active span { filter: none; opacity: 1; }
+.bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--material);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border-top: .5px solid var(--sep); padding-bottom: env(safe-area-inset-bottom); }
+.quickbar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 16px 6px; max-width: 680px; margin: 0 auto; }
+.qbtn { height: 46px; border-radius: 12px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 16px; font-weight: 600; letter-spacing: -.32px;
+  background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); transition: transform .1s; }
+.qbtn:active { transform: scale(.96); background: color-mix(in srgb, var(--c) 25%, transparent); }
+.tabbar { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 680px; margin: 0 auto; }
+.tabbar button { height: 50px; font-size: 10px; font-weight: 500; letter-spacing: .1px; color: #999;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; }
+.tabbar button.active { color: var(--accent); }
 
 /* =========================================================
-   5. EINGABE-FENSTER ("Sheet", fährt von unten hoch)
+   6. SHEET (Eingabefenster, fährt von unten hoch)
    ========================================================= */
-.backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 40; }
+.backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.3); opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 40; }
 .backdrop.open { opacity: 1; pointer-events: auto; }
-.sheet { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 10px); bottom: 0;
-  max-width: 640px; margin: 0 auto; background: var(--bg); border-radius: 16px 16px 0 0;
-  transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1); z-index: 50;
-  display: flex; flex-direction: column; box-shadow: 0 -4px 30px rgba(0,0,0,.15); }
-.sheet.open { transform: none; }
-.sheet-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--sep); }
-.sheet-head h2 { margin: 0; font-size: 17px; text-align: center; }
-.sheet-head button { background: none; border: 0; color: var(--accent); padding: 6px 2px; }
-.sheet-head #sheet-save { justify-self: end; font-weight: 700; }
-.sheet-head #sheet-cancel { justify-self: start; }
+.sheet { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 12px); bottom: 0;
+  max-width: 680px; margin: 0 auto; background: var(--sheet-bg); border-radius: 12px 12px 0 0;
+  transform: translateY(105%); transition: transform .38s cubic-bezier(.32,.72,0,1); z-index: 50;
+  display: flex; flex-direction: column; overflow: hidden; }
+.sheet:not(.open) { visibility: hidden; transition: transform .38s cubic-bezier(.32,.72,0,1), visibility 0s linear .38s; }
+.sheet.open { transform: none; visibility: visible; }
+.grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--tertiary); margin: 6px auto 0; }
+.sheet-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 6px 16px 10px; }
+.sheet-head h2 { margin: 0; font-size: 17px; font-weight: 600; text-align: center; }
+.sheet-head button { color: var(--accent); padding: 6px 0; }
+#sheet-cancel { justify-self: start; }
+#sheet-save { justify-self: end; font-weight: 600; }
 .sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: 12px 16px calc(40px + env(safe-area-inset-bottom)); flex: 1; }
-.summary { margin-bottom: 4px; font-size: 15px; }
-.curve { display: flex; align-items: flex-end; gap: 6px; height: 80px; margin: 12px 0 8px; }
-.curve span { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 3px; }
-.curve b { width: 100%; max-width: 24px; border-radius: 5px; }
-.curve small { font-size: 10px; color: var(--muted); }
+  padding: 4px 16px calc(40px + env(safe-area-inset-bottom)); flex: 1; }
+.summary-card { background: var(--sheet-card); border-radius: 10px; padding: 14px 16px; font-size: 15px; letter-spacing: -.24px; }
+.summary-card strong { font-size: 17px; letter-spacing: -.41px; }
+.curve { display: flex; align-items: flex-end; gap: 6px; height: 76px; margin: 14px 0 8px; }
+.curve span { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
+.curve b { width: 100%; max-width: 22px; border-radius: 6px; }
+.curve small { font-size: 11px; color: var(--secondary); font-variant-numeric: tabular-nums; }
+.muted { color: var(--secondary); }
 
 /* =========================================================
-   6. KALENDER
+   7. KALENDER
    ========================================================= */
-.cal-nav { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
-.cal-nav button { background: var(--card); border: 0; border-radius: 10px; width: 44px; height: 40px; font-size: 22px; color: var(--accent); }
-.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
-.cal-wd { text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; padding-bottom: 2px; }
-.cal-cell { aspect-ratio: 1; border: 0; border-radius: 10px; background: var(--card);
-  display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; font-size: 15px; }
-.cal-cell.blank { background: transparent; }
-.cal-cell.has-mood { background: var(--mood); color: #fff; }
-.cal-cell.today .num { font-weight: 800; text-decoration: underline; }
-.cal-cell.selected { outline: 2.5px solid var(--text); outline-offset: -2.5px; }
-.cal-cell .dots { font-size: 9px; line-height: 1; height: 9px; letter-spacing: -1px; }
-.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 10px 2px; }
-.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 3px; vertical-align: -1px; }
+.cal-card { background: var(--card); border-radius: 10px; padding: 12px 10px 10px; margin-top: 20px; }
+.cal-nav { display: flex; justify-content: space-between; align-items: center; padding: 0 6px 10px; }
+.cal-nav strong { font-size: 17px; font-weight: 600; }
+.cal-nav .navs { display: flex; gap: 18px; color: var(--accent); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); row-gap: 4px; }
+.cal-wd { text-align: center; font-size: 13px; color: var(--tertiary); font-weight: 600; padding-bottom: 6px; text-transform: uppercase; }
+.cal-cell { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 2px 0; }
+.cal-num { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 19px; font-variant-numeric: tabular-nums; letter-spacing: -.3px; }
+.cal-cell.mood .cal-num { background: color-mix(in srgb, var(--mood) 30%, transparent); }
+.cal-cell.today .cal-num { color: var(--red); font-weight: 600; }
+.cal-cell.selected .cal-num { background: var(--text); color: var(--card); font-weight: 600; }
+.cal-dots { display: flex; gap: 2px; height: 5px; }
+.cal-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--tertiary); }
+.legend { display: flex; justify-content: center; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--secondary); margin: 10px 0 0; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend i { width: 10px; height: 10px; border-radius: 50%; }
+.day-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.pill-btn { background: var(--card); border-radius: 10px; padding: 11px; color: var(--accent); font-size: 15px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 6px; letter-spacing: -.24px; }
+.pill-btn:active { background: var(--fill); }
 
 /* =========================================================
-   7. SPERRBILDSCHIRM & HINWEIS-TOAST
+   8. SPERRBILDSCHIRM & HUD
    ========================================================= */
-.lock { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+.lock { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 24px; }
 .lock.hidden { display: none; }
-.lock-icon { font-size: 64px; }
-.lock h2 { margin: 8px 0 4px; font-size: 28px; }
-.lock p { color: var(--muted); margin: 0 0 24px; }
-.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 12px); transform: translate(-50%, -20px);
-  background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 15px; font-weight: 600;
-  opacity: 0; transition: all .25s; z-index: 200; pointer-events: none; white-space: nowrap; }
-.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.lock-icon { width: 76px; height: 76px; border-radius: 38px; background: var(--fill); color: var(--text);
+  display: flex; align-items: center; justify-content: center; margin-bottom: 16px; }
+.lock h2 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: .36px; }
+.lock p { color: var(--secondary); margin: 6px 0 28px; }
+.btn-filled { background: var(--accent); color: #fff; border-radius: 14px; padding: 15px 28px; font-weight: 600; min-width: 240px; }
+.btn-filled:active { opacity: .8; }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 10px); transform: translate(-50%, -16px) scale(.96);
+  background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  color: var(--text); padding: 10px 18px; border-radius: 999px; font-size: 15px; font-weight: 600; letter-spacing: -.24px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.14); display: flex; align-items: center; gap: 8px;
+  opacity: 0; transition: all .3s cubic-bezier(.32,.72,0,1); z-index: 200; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.toast svg { color: var(--green); }
 </style>
 </head>
 <body>
 
-<!-- Sperrbildschirm (wird per JavaScript ein- und ausgeblendet) -->
 <div id="lock" class="lock hidden">
-  <div>
-    <div class="lock-icon">🔒</div>
-    <h2>Wellbeing</h2>
-    <p>Nur für dich.</p>
-    <button class="btn" data-action="unlock">Mit Face ID entsperren</button>
-  </div>
+  <div class="lock-icon" id="lock-icon"></div>
+  <h2>Wellbeing</h2>
+  <p>Nur für dich.</p>
+  <button class="btn-filled" data-action="unlock">Mit Face ID entsperren</button>
 </div>
 
+<header class="navbar" id="navbar"></header>
+
 <main>
-  <h1 id="title">Heute</h1>
+  <h1 class="large-title" id="title">Heute</h1>
   <section id="view"></section>
 </main>
 
-<!-- Schnelleintrag: immer sichtbar -->
-<div class="quickbar">
-  <button class="qbtn done" data-action="new-done">＋ Done</button>
-  <button class="qbtn feel" data-action="new-checkin">＋ Gefühl</button>
+<div class="bottom">
+  <div class="quickbar" id="quickbar"></div>
+  <nav class="tabbar" id="tabbar"></nav>
 </div>
-
-<nav class="tabbar">
-  <button data-action="tab" data-tab="today"><span>☀️</span>Heute</button>
-  <button data-action="tab" data-tab="calendar"><span>📅</span>Kalender</button>
-  <button data-action="tab" data-tab="goals"><span>🎯</span>Ziele</button>
-  <button data-action="tab" data-tab="more"><span>⚙️</span>Mehr</button>
-</nav>
 
 <div id="backdrop" class="backdrop" data-action="sheet-cancel"></div>
 <div id="sheet" class="sheet" aria-hidden="true">
+  <div class="grabber"></div>
   <div class="sheet-head">
     <button id="sheet-cancel" data-action="sheet-cancel">Abbrechen</button>
     <h2 id="sheet-title"></h2>
@@ -232,36 +310,95 @@ textarea.input { resize: vertical; }
 'use strict';
 
 /* =========================================================
-   1. FESTE LISTEN (Kategorien, Gefühle, Skalen)
+   1. ICONS (Linien-Icons im Stil von SF Symbols, 24×24)
+   ========================================================= */
+const ICONS = {
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/>',
+  calendar: '<rect x="3" y="4.5" width="18" height="16.5" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+  more: '<circle cx="12" cy="12" r="9"/><circle cx="7.8" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="16.2" cy="12" r=".6" fill="currentColor"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.8 2.8L16.2 9.8"/>',
+  heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/>',
+  sparkles: '<path d="M10 3.5l1.7 4.8 4.8 1.7-4.8 1.7L10 16.5l-1.7-4.8L3.5 10l4.8-1.7z"/><path d="M18 14l.9 2.1 2.1.9-2.1.9L18 20l-.9-2.1L15 17l2.1-.9z"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  arrowUp: '<path d="M12 19V5M6 11l6-6 6 6"/>',
+  chevron: '<path d="M9.5 5.5L16 12l-6.5 6.5"/>',
+  chevronLeft: '<path d="M14.5 5.5L8 12l6.5 6.5"/>',
+  xmark: '<path d="M7 7l10 10M17 7L7 17"/>',
+  star: '<path d="M12 3.8l2.5 5.1 5.6.8-4 3.9 1 5.6-5.1-2.6-5 2.6 1-5.6-4.1-3.9 5.6-.8z"/>',
+  moon: '<path d="M19.5 14.5A8 8 0 1 1 9.5 4.5a6.3 6.3 0 0 0 10 10z"/>',
+  lock: '<rect x="5" y="10.5" width="14" height="10.5" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  faceid: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M9 9.5v1M15 9.5v1M12 9.5v3.5h-1M9.5 15.5a3.5 3.5 0 0 0 5 0"/>',
+  timer: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2.5h4"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 1.5h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  share: '<path d="M12 3.5v11M8 7.5l4-4 4 4"/><path d="M7 11H6a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1"/>',
+  copy: '<rect x="8.5" y="8.5" width="11.5" height="12.5" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6.5A2.5 2.5 0 0 0 4 6v7a2.5 2.5 0 0 0 2.5 2.5h2"/>',
+  archive: '<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>',
+  restore: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>',
+  tag: '<path d="M3.5 12.2V5a1.5 1.5 0 0 1 1.5-1.5h7.2l8.3 8.3-8.7 8.7z"/><circle cx="8" cy="8" r="1.3"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".5" fill="currentColor"/>',
+  phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+  // Kategorie-Icons
+  briefcase: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5.5A1.5 1.5 0 0 1 10.5 4h3A1.5 1.5 0 0 1 15 5.5V7M3 12.5h18"/>',
+  dumbbell: '<path d="M7 6.5v11M17 6.5v11M4 9v6M20 9v6M7 12h10"/>',
+  people: '<circle cx="9" cy="8" r="3.3"/><path d="M3 19.5a6 6 0 0 1 12 0"/><circle cx="16.8" cy="9" r="2.6"/><path d="M16.5 14a4.8 4.8 0 0 1 4.5 5"/>',
+  house: '<path d="M3.5 11L12 4l8.5 7"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5.5h4V20"/>',
+  book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v14.5H6.5A2.5 2.5 0 0 0 4 20z"/><path d="M4 20a1.5 1.5 0 0 0 1.5 1.5H20v-4"/>',
+  leaf: '<path d="M5 19.5C5 11 10 5 20 4.5c0 9.5-5.5 15-13.5 15"/><path d="M5 19.5l8-8"/>',
+  brush: '<path d="M4 20l1.2-4.2L16 5l3 3L8.2 18.8z"/><path d="M14 7l3 3"/>',
+  music: '<path d="M9 17.5V5.5l11-2v12"/><circle cx="6.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="15.5" r="2.5"/>',
+  cart: '<path d="M3 4h2.2l2.3 10.5h10.8L20.5 7.5H6.3"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/>',
+  cup: '<path d="M4.5 8.5h12v4.5a6 6 0 0 1-6 6 6 6 0 0 1-6-6z"/><path d="M16.5 10h1.3a2.5 2.5 0 0 1 0 5h-1.6M8 3.5v2M12 3.5v2"/>',
+  bike: '<circle cx="6" cy="16" r="3.5"/><circle cx="18" cy="16" r="3.5"/><path d="M6 16l3.8-7h5.4l2.8 7M9.8 9l3.7 7M13.5 6h2.2"/>',
+  bed: '<path d="M3 18.5v-12M3 13.5h18v5M21 13.5a3 3 0 0 0-3-3h-7v3"/><circle cx="7" cy="11" r="1.8"/>',
+  chat: '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v8a2.5 2.5 0 0 1-2.5 2.5H10l-4.5 3.5V17h0A2.5 2.5 0 0 1 4 14.5z"/>',
+  code: '<path d="M8.5 7L3.5 12l5 5M15.5 7l5 5-5 5M13.5 4.5l-3 15"/>',
+  plane: '<path d="M10.5 13.5L3.5 11l1.5-1.5 7 1L16 6.5a2 2 0 0 1 3 3l-4 4 1 7-1.5 1.5-2.5-7-3 3v2.5L7.5 22l-1-3.5L3 17.5 4.5 16H7l3.5-2.5z"/>',
+  euro: '<path d="M17.5 6.5A7 7 0 1 0 17.5 17.5"/><path d="M4 10.5h9M4 13.5h9"/>',
+  trash: '<path d="M4 6.5h16M9.5 6.5V4.5h5v2M6 6.5l1 13.5a1.5 1.5 0 0 0 1.5 1.5h7a1.5 1.5 0 0 0 1.5-1.5l1-13.5"/>',
+};
+
+function icon(name, size = 22, sw = 1.9) {
+  return `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ICONS.check}</svg>`;
+}
+const badge = (iconName, color, size = 17) => `<span class="badge" style="--c:${color}">${icon(iconName, size, 2.1)}</span>`;
+
+/* =========================================================
+   2. FESTE LISTEN
    ========================================================= */
 const STORAGE_KEY = 'wellbeing-data-v1';
 const LAST_ACTIVE_KEY = 'wellbeing-last-active';
 const HINT_KEY = 'wellbeing-hide-install-hint';
 
-const CATEGORIES = [
-  { name: 'Arbeit', icon: '💼' },
-  { name: 'Sport', icon: '🏃' },
-  { name: 'Soziales', icon: '👥' },
-  { name: 'Haushalt', icon: '🏠' },
-  { name: 'Lernen', icon: '📚' },
-  { name: 'Selbstfürsorge', icon: '🌿' },
-  { name: 'Kreatives', icon: '🎨' },
-  { name: 'Sonstiges', icon: '✅' },
-];
+// iOS-Systemfarben
+const IOS_COLORS = ['#007AFF', '#34C759', '#FF9500', '#FF2D55', '#5856D6', '#AF52DE', '#FF3B30', '#30B0C7', '#00C7BE', '#32ADE6', '#FFCC00', '#A2845E', '#8E8E93', '#1C1C1E'];
+const CAT_ICONS = ['briefcase', 'dumbbell', 'people', 'house', 'book', 'leaf', 'brush', 'music', 'cart', 'cup', 'bike', 'bed', 'chat', 'code', 'plane', 'euro', 'phone', 'heart', 'star', 'sparkles', 'target', 'sun', 'moon', 'check'];
+
+function defaultCategories() {
+  return [
+    { name: 'Arbeit', icon: 'briefcase', color: '#007AFF' },
+    { name: 'Sport', icon: 'dumbbell', color: '#34C759' },
+    { name: 'Soziales', icon: 'people', color: '#FF9500' },
+    { name: 'Haushalt', icon: 'house', color: '#A2845E' },
+    { name: 'Lernen', icon: 'book', color: '#5856D6' },
+    { name: 'Selbstfürsorge', icon: 'leaf', color: '#30B0C7' },
+    { name: 'Kreatives', icon: 'brush', color: '#FF2D55' },
+    { name: 'Sonstiges', icon: 'check', color: '#8E8E93' },
+  ].map(c => ({ id: uid(), hidden: false, ...c }));
+}
 
 const EMOTION_GROUPS = [
-  { name: 'Freude', color: '#c99400', items: ['glücklich', 'dankbar', 'stolz', 'zufrieden', 'begeistert', 'erleichtert', 'verbunden'] },
-  { name: 'Ruhe', color: '#12a594', items: ['entspannt', 'gelassen', 'geborgen', 'ausgeglichen', 'hoffnungsvoll'] },
-  { name: 'Kraft', color: '#f76b15', items: ['motiviert', 'selbstbewusst', 'energiegeladen', 'mutig', 'fokussiert', 'neugierig'] },
-  { name: 'Traurigkeit', color: '#3e63dd', items: ['traurig', 'einsam', 'enttäuscht', 'niedergeschlagen', 'wehmütig'] },
-  { name: 'Angst', color: '#8e4ec6', items: ['ängstlich', 'besorgt', 'gestresst', 'überfordert', 'unsicher', 'nervös'] },
-  { name: 'Wut', color: '#e5484d', items: ['wütend', 'gereizt', 'frustriert', 'genervt', 'eifersüchtig'] },
-  { name: 'Scham / Schuld', color: '#a18072', items: ['beschämt', 'schuldig', 'peinlich berührt'] },
-  { name: 'Sonstiges', color: '#8e8e93', items: ['erschöpft', 'gelangweilt', 'gleichgültig', 'verwirrt', 'überrascht'] },
+  { name: 'Freude', color: '#FF9500', items: ['glücklich', 'dankbar', 'stolz', 'zufrieden', 'begeistert', 'erleichtert', 'verbunden'] },
+  { name: 'Ruhe', color: '#30B0C7', items: ['entspannt', 'gelassen', 'geborgen', 'ausgeglichen', 'hoffnungsvoll'] },
+  { name: 'Kraft', color: '#34C759', items: ['motiviert', 'selbstbewusst', 'energiegeladen', 'mutig', 'fokussiert', 'neugierig'] },
+  { name: 'Traurigkeit', color: '#007AFF', items: ['traurig', 'einsam', 'enttäuscht', 'niedergeschlagen', 'wehmütig'] },
+  { name: 'Angst', color: '#AF52DE', items: ['ängstlich', 'besorgt', 'gestresst', 'überfordert', 'unsicher', 'nervös'] },
+  { name: 'Wut', color: '#FF3B30', items: ['wütend', 'gereizt', 'frustriert', 'genervt', 'eifersüchtig'] },
+  { name: 'Scham / Schuld', color: '#A2845E', items: ['beschämt', 'schuldig', 'peinlich berührt'] },
+  { name: 'Sonstiges', color: '#8E8E93', items: ['erschöpft', 'gelangweilt', 'gleichgültig', 'verwirrt', 'überrascht'] },
 ];
-
 const TRIGGERS = ['Arbeit', 'Partner*in', 'Familie', 'Freunde', 'Schlaf', 'Gesundheit', 'Sport', 'Wetter', 'Alleinsein', 'Medien'];
-
 const MOODS = [
   { v: 1, emoji: '😣', label: 'sehr schlecht' },
   { v: 2, emoji: '🙁', label: 'schlecht' },
@@ -269,76 +406,93 @@ const MOODS = [
   { v: 4, emoji: '🙂', label: 'gut' },
   { v: 5, emoji: '😄', label: 'sehr gut' },
 ];
-const MOOD_COLORS = { 1: '#e5484d', 2: '#f76b15', 3: '#d9a400', 4: '#7cb342', 5: '#30a46c' };
-
+const MOOD_COLORS = { 1: '#FF3B30', 2: '#FF9500', 3: '#FFCC00', 4: '#34C759', 5: '#00C7BE' };
 const LIFE_AREAS = ['Gesundheit', 'Beziehungen', 'Karriere', 'Persönliches', 'Finanzen', 'Freizeit'];
 const GOAL_STATUS = { active: 'Aktiv', done: 'Erreicht', paused: 'Pausiert' };
+const GRAT_COLOR = '#FF9500';
 
 /* =========================================================
-   2. DATEN LADEN & SPEICHERN (bleiben nur auf diesem Gerät)
+   3. DATEN LADEN & SPEICHERN (nur auf diesem Gerät)
    ========================================================= */
+function uid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
 function emptyData() {
   return {
-    version: 1,
-    dones: [],        // { id, text, category, date:'JJJJ-MM-TT', goalId, createdAt }
-    checkins: [],     // { id, ts (Zeitpunkt), mood 1–5, emotions[], triggers[], note }
-    reflections: {},  // 'JJJJ-MM-TT' → { mood, text, sleep, energy, gratitude[] }
-    goals: [],        // { id, title, description, area, status, createdAt }
+    version: 2,
+    dones: [],        // { id, text, category, date, goalId, createdAt }
+    checkins: [],     // { id, ts, mood, emotions[], triggers[], note }
+    gratitude: [],    // { id, text, date, createdAt }
+    reflections: {},  // 'JJJJ-MM-TT' → { mood, text, sleep, energy }
+    goals: [],
     favorites: [],    // { id, text, category, goalId }
     customEmotions: [],
+    categories: null, // { id, name, icon, color, hidden }
     settings: { lockEnabled: false, credentialId: null, graceMinutes: 5, lastBackup: null },
   };
 }
 
+// Bringt auch ältere Datenstände (v1) auf den aktuellen Stand
+function normalize(d) {
+  const base = emptyData();
+  const out = Object.assign(base, d, { settings: Object.assign(base.settings, d.settings || {}) });
+  if (!Array.isArray(out.gratitude)) out.gratitude = [];
+  if (!Array.isArray(out.categories) || !out.categories.length) out.categories = defaultCategories();
+  // v1: Dankbarkeit stand im Tagesfazit → in eigene Einträge umziehen
+  for (const [k, r] of Object.entries(out.reflections || {})) {
+    if (r && Array.isArray(r.gratitude)) {
+      r.gratitude.forEach(t => out.gratitude.push({ id: uid(), text: t, date: k, createdAt: k + 'T20:00:00.000Z' }));
+      delete r.gratitude;
+    }
+  }
+  out.version = 2;
+  return out;
+}
+
 function loadData() {
   const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return emptyData();
+  if (!raw) return normalize({});
   try {
-    const d = JSON.parse(raw);
-    const base = emptyData();
-    return Object.assign(base, d, { settings: Object.assign(base.settings, d.settings || {}) });
+    return normalize(JSON.parse(raw));
   } catch (e) {
-    // Sicherheitsnetz: kaputte Daten nicht überschreiben, sondern beiseitelegen
     localStorage.setItem(STORAGE_KEY + '-defekt-' + Date.now(), raw);
-    return emptyData();
+    return normalize({});
   }
 }
 
 let data = loadData();
+save();
 
 function save() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    toast('⚠️ Speichern fehlgeschlagen');
-  }
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+  catch (e) { toast('Speichern fehlgeschlagen', false); }
 }
 
 /* =========================================================
-   3. KLEINE HELFER
+   4. HELFER
    ========================================================= */
 const $ = sel => document.querySelector(sel);
-const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
 const pad = n => String(n).padStart(2, '0');
 const dateKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const parseKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
 const fmtTime = iso => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
 const fmtDayLong = k => parseKey(k).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
-const fmtDayShort = k => parseKey(k).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const fmtDayShort = k => parseKey(k).toLocaleDateString('de-DE', { day: 'numeric', month: 'short', year: 'numeric' });
 const truncate = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const catIcon = name => (CATEGORIES.find(c => c.name === name) || { icon: '✅' }).icon;
-const emotionColor = e => (EMOTION_GROUPS.find(g => g.items.includes(e)) || { color: '#8e8e93' }).color;
+const emotionColor = e => (EMOTION_GROUPS.find(g => g.items.includes(e)) || { color: '#8E8E93' }).color;
 const goalTitle = id => (data.goals.find(g => g.id === id) || { title: '(gelöschtes Ziel)' }).title;
 const daysSince = iso => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
-function donesOn(k) {
-  return data.dones.filter(d => d.date === k).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+function catInfo(name) {
+  return data.categories.find(c => c.name === name) || { name, icon: 'check', color: '#8E8E93' };
 }
-function checkinsOn(k) {
-  return data.checkins.filter(c => dateKey(new Date(c.ts)) === k).sort((a, b) => a.ts.localeCompare(b.ts));
-}
-// Tagesstimmung: Tagesfazit, sonst Durchschnitt der Check-ins
+const catBadge = name => { const c = catInfo(name); return badge(c.icon, c.color); };
+const visibleCategories = () => data.categories.filter(c => !c.hidden);
+
+const donesOn = k => data.dones.filter(d => d.date === k).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+const checkinsOn = k => data.checkins.filter(c => dateKey(new Date(c.ts)) === k).sort((a, b) => a.ts.localeCompare(b.ts));
+const gratitudeOn = k => data.gratitude.filter(g => g.date === k).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 function dayMood(k) {
   const r = data.reflections[k];
   if (r && r.mood) return r.mood;
@@ -348,367 +502,493 @@ function dayMood(k) {
 }
 
 let toastTimer;
-function toast(msg) {
+function toast(msg, ok = true) {
   const t = $('#toast');
-  t.textContent = msg;
+  t.innerHTML = (ok ? icon('checkCircle', 18, 2.2) : '') + `<span>${esc(msg)}</span>`;
   t.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1700);
 }
-function shake(el) {
-  if (!el) return;
-  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
-}
+function shake(el) { if (!el) return; el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
 
 /* =========================================================
-   4. ANSICHTEN (Heute, Kalender, Ziele, Mehr)
+   5. ANSICHTEN
    ========================================================= */
 const ui = {
   tab: 'today',
   calMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   calSelected: dateKey(),
-  draft: {},   // Zwischenspeicher für das gerade offene Eingabefenster
+  draft: {},
 };
+const TABS = [
+  { id: 'today', label: 'Heute', icon: 'sun' },
+  { id: 'calendar', label: 'Kalender', icon: 'calendar' },
+  { id: 'goals', label: 'Ziele', icon: 'target' },
+  { id: 'more', label: 'Mehr', icon: 'more' },
+];
+const TITLES = { today: 'Heute', calendar: 'Kalender', goals: 'Lebensziele', more: 'Mehr' };
+
+function renderChrome() {
+  $('#quickbar').innerHTML = `
+    <button class="qbtn" style="--c:var(--green)" data-action="new-done">${icon('checkCircle', 20, 2)}Done</button>
+    <button class="qbtn" style="--c:var(--pink)" data-action="new-checkin">${icon('heart', 20, 2)}Gefühl</button>
+    <button class="qbtn" style="--c:var(--orange)" data-action="new-gratitude">${icon('sparkles', 20, 2)}Dankbar</button>`;
+  $('#lock-icon').innerHTML = icon('faceid', 40, 1.6);
+}
 
 function render() {
-  const titles = { today: 'Heute', calendar: 'Kalender', goals: 'Lebensziele', more: 'Mehr' };
   const views = { today: renderToday, calendar: renderCalendar, goals: renderGoals, more: renderMore };
-  $('#title').textContent = titles[ui.tab];
+  $('#title').textContent = TITLES[ui.tab];
+  $('#navbar').textContent = TITLES[ui.tab];
   $('#view').innerHTML = views[ui.tab]();
-  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === ui.tab));
+  $('#tabbar').innerHTML = TABS.map(t => `
+    <button data-action="tab" data-tab="${t.id}" class="${t.id === ui.tab ? 'active' : ''}">${icon(t.icon, 25, ui.tab === t.id ? 2.1 : 1.7)}${t.label}</button>`).join('');
 }
+
+function secHead(title, count, action, day) {
+  return `<div class="sec-head"><h2>${title}</h2>${count != null ? `<span class="sec-count">${count}</span>` : ''}
+    ${action ? `<button class="sec-add" data-action="${action}" ${day ? `data-day="${day}"` : ''} aria-label="Hinzufügen">${icon('plus', 18, 2.4)}</button>` : ''}</div>`;
+}
+
+function cell({ lead = '', title, sub = '', acc = '', action = '', attrs = '', cls = '' }) {
+  const tag = action ? 'button' : 'div';
+  return `<${tag} class="cell ${cls}" ${action ? `data-action="${action}"` : ''} ${attrs}>
+    ${lead ? `<span class="cell-lead">${lead}</span>` : ''}
+    <span class="cell-body"><span class="cell-text"><span class="cell-title">${title}</span>${sub ? `<span class="cell-sub">${sub}</span>` : ''}</span>
+    ${acc ? `<span class="cell-acc">${acc}</span>` : ''}</span></${tag}>`;
+}
+const emptyCell = text => `<div class="cell empty"><span class="cell-body">${text}</span></div>`;
+const chevron = () => icon('chevron', 14, 2.6);
 
 // --- Heute ---
 function renderToday() {
   const k = dateKey();
-  let html = `<p class="subtitle">${esc(fmtDayLong(k))}</p>`;
-
+  let html = `<p class="date-sub">${esc(fmtDayLong(k))}</p>`;
   const standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
   if (!standalone && !localStorage.getItem(HINT_KEY)) {
-    html += `<div class="hint"><span>📲</span><span><strong>Tipp:</strong> In Safari auf <em>Teilen → Zum Home-Bildschirm</em> tippen. Dann läuft Wellbeing wie eine App. Achtung: Die Daten im Safari-Tab und in der Home-Bildschirm-App sind getrennt, also nur dort eintragen.</span><button class="x" data-action="hide-hint">×</button></div>`;
+    html += `<div class="hint">${badge('phone', 'var(--accent)')}<div class="hint-body"><strong>Zum Home-Bildschirm hinzufügen</strong><br>
+      <span class="muted">In Safari auf Teilen → „Zum Home-Bildschirm“ tippen. Daten im Safari-Tab und in der App sind getrennt.</span></div>
+      <button class="icon-btn" data-action="hide-hint" aria-label="Schließen">${icon('xmark', 16, 2.4)}</button></div>`;
   }
-
   const entries = data.dones.length + data.checkins.length;
   const lb = data.settings.lastBackup;
   if (entries >= 10 && (!lb || daysSince(lb) >= 14)) {
-    html += `<div class="hint"><span>💾</span><span>${lb ? `Letztes Backup vor ${daysSince(lb)} Tagen.` : 'Noch kein Backup gemacht.'} <button class="link" data-action="export-json">Jetzt sichern</button></span></div>`;
+    html += `<div class="hint">${badge('archive', '#8E8E93')}<div class="hint-body">${lb ? `Letztes Backup vor ${daysSince(lb)} Tagen.` : 'Noch kein Backup erstellt.'}
+      <button class="link-btn" data-action="export-json">Jetzt sichern</button></div></div>`;
   }
-
-  return html + renderDay(k);
+  return html + renderDay(k, true);
 }
 
-// Ein Tag: Dones, Check-ins, Tagesfazit (wird in "Heute" und im Kalender benutzt)
-function renderDay(k) {
-  const dones = donesOn(k);
-  const cis = checkinsOn(k);
-  const r = data.reflections[k];
+function renderDay(k, isToday) {
+  const dones = donesOn(k), cis = checkinsOn(k), grats = gratitudeOn(k), r = data.reflections[k];
   let html = '';
 
-  html += `<h3 class="section">Erledigt <span class="count">${dones.length}</span></h3><div class="card">`;
-  html += dones.length
-    ? dones.map(d => `
-      <button class="row" data-action="edit-done" data-id="${d.id}">
-        <span class="row-icon">${catIcon(d.category)}</span>
-        <span class="row-main"><span>${esc(d.text)}</span>
-          <small>${esc(d.category)}${d.goalId ? ' · 🎯 ' + esc(goalTitle(d.goalId)) : ''}</small></span>
-      </button>`).join('')
-    : `<div class="empty">Noch nichts eingetragen – was hast du geschafft?</div>`;
-  html += `</div>`;
+  html += secHead('Erledigt', dones.length || null, 'new-done', k);
+  html += `<div class="list">${dones.length ? dones.map(d => cell({
+    lead: catBadge(d.category), title: esc(d.text),
+    sub: esc(d.category) + (d.goalId ? ' · ' + esc(goalTitle(d.goalId)) : ''),
+    acc: chevron(), action: 'edit-done', attrs: `data-id="${d.id}"`,
+  })).join('') : emptyCell('Noch nichts eingetragen.')}</div>`;
 
-  html += `<h3 class="section">Gefühle <span class="count">${cis.length}</span></h3><div class="card">`;
-  html += cis.length
-    ? cis.map(c => `
-      <button class="row" data-action="edit-checkin" data-id="${c.id}">
-        <span class="row-icon">${MOODS[c.mood - 1].emoji}</span>
-        <span class="row-main"><span>${c.emotions.length ? c.emotions.map(esc).join(', ') : 'Stimmung ' + c.mood + '/5'}</span>
-          <small>${fmtTime(c.ts)} Uhr${c.triggers.length ? ' · ' + c.triggers.map(esc).join(', ') : ''}${c.note ? ' · ' + esc(truncate(c.note, 40)) : ''}</small></span>
-      </button>`).join('')
-    : `<div class="empty">Noch kein Check-in. Wie fühlst du dich gerade?</div>`;
-  html += `</div>`;
+  html += secHead('Gefühle', cis.length || null, isToday ? 'new-checkin' : '');
+  html += `<div class="list">${cis.length ? cis.map(c => cell({
+    lead: `<span class="emoji-lead">${MOODS[c.mood - 1].emoji}</span>`,
+    title: c.emotions.length ? c.emotions.map(esc).join(', ') : `Stimmung ${c.mood} von 5`,
+    sub: `${fmtTime(c.ts)} Uhr${c.triggers.length ? ' · ' + c.triggers.map(esc).join(', ') : ''}${c.note ? ' · ' + esc(truncate(c.note, 36)) : ''}`,
+    acc: chevron(), action: 'edit-checkin', attrs: `data-id="${c.id}"`,
+  })).join('') : emptyCell(isToday ? 'Wie fühlst du dich gerade?' : 'Kein Check-in an diesem Tag.')}</div>`;
 
-  html += `<h3 class="section">Tagesfazit</h3>`;
+  html += secHead('Dankbar für', grats.length || null, 'new-gratitude', k);
+  html += `<div class="list">${grats.length ? grats.map(g => cell({
+    lead: badge('sparkles', GRAT_COLOR), title: esc(g.text), acc: chevron(), action: 'new-gratitude', attrs: `data-day="${k}"`,
+  })).join('') : emptyCell('Wofür bist du heute dankbar?')}</div>`;
+
+  html += secHead('Tagesfazit');
   if (r) {
     const extras = [r.sleep ? `Schlaf ${r.sleep}/5` : '', r.energy ? `Energie ${r.energy}/5` : ''].filter(Boolean).join(' · ');
-    html += `
-      <button class="card reflection" data-action="open-reflection" data-day="${k}">
-        <div class="refl-head"><span class="big-emoji">${MOODS[r.mood - 1].emoji}</span>
-          <div><strong>Gesamtstimmung ${r.mood}/5</strong>${extras ? `<small>${extras}</small>` : ''}</div></div>
-        ${r.text ? `<p>${esc(r.text)}</p>` : ''}
-        ${r.gratitude && r.gratitude.length ? `<p class="muted">🙏 ${r.gratitude.map(esc).join(' · ')}</p>` : ''}
-      </button>`;
+    html += `<div class="list">${cell({
+      lead: `<span class="emoji-lead">${MOODS[r.mood - 1].emoji}</span>`,
+      title: `Gesamtstimmung ${r.mood} von 5`,
+      sub: [extras, r.text ? esc(truncate(r.text, 120)) : ''].filter(Boolean).join('<br>'),
+      acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`,
+    })}</div>`;
   } else {
-    html += `<button class="card cta" data-action="open-reflection" data-day="${k}">🌙 Tagesfazit ziehen</button>`;
+    html += `<div class="list">${cell({ lead: badge('moon', 'var(--indigo)'), title: 'Tagesfazit ziehen', acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`, cls: 'action' })}</div>`;
   }
   return html;
 }
 
 // --- Kalender ---
 function renderCalendar() {
-  const m = ui.calMonth;
-  const year = m.getFullYear(), month = m.getMonth();
-  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7; // Woche beginnt Montag
+  const m = ui.calMonth, year = m.getFullYear(), month = m.getMonth();
+  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const todayK = dateKey();
-
   let cells = '';
-  for (let i = 0; i < startOffset; i++) cells += `<div class="cal-cell blank"></div>`;
+  for (let i = 0; i < startOffset; i++) cells += `<div></div>`;
   for (let d = 1; d <= daysInMonth; d++) {
     const k = `${year}-${pad(month + 1)}-${pad(d)}`;
-    const mood = dayMood(k);
-    const n = donesOn(k).length;
-    const cls = ['cal-cell', mood ? 'has-mood' : '', k === todayK ? 'today' : '', k === ui.calSelected ? 'selected' : ''].join(' ');
+    const mood = dayMood(k), n = donesOn(k).length;
+    const cls = ['cal-cell', mood ? 'mood' : '', k === todayK ? 'today' : '', k === ui.calSelected ? 'selected' : ''].join(' ');
     cells += `<button class="${cls}" data-action="select-day" data-day="${k}" ${mood ? `style="--mood:${MOOD_COLORS[mood]}"` : ''}>
-      <span class="num">${d}</span><span class="dots">${'●'.repeat(Math.min(n, 4))}${n > 4 ? '+' : ''}</span></button>`;
+      <span class="cal-num">${d}</span><span class="cal-dots">${'<i></i>'.repeat(Math.min(n, 3))}</span></button>`;
   }
   const label = m.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
-
   return `
-    <div class="cal-nav"><button data-action="cal-prev">‹</button><strong>${label}</strong><button data-action="cal-next">›</button></div>
-    <div class="cal-grid">${['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(w => `<div class="cal-wd">${w}</div>`).join('')}${cells}</div>
-    <div class="legend">${MOODS.map(x => `<span><i style="background:${MOOD_COLORS[x.v]}"></i>${x.emoji}</span>`).join('')}<span>● = Dones</span></div>
-    <h3 class="section" style="text-transform:none;font-size:17px;color:var(--text)">${esc(fmtDayLong(ui.calSelected))}</h3>
-    <button class="btn secondary full" data-action="new-done" data-day="${ui.calSelected}">＋ Done für diesen Tag nachtragen</button>
-    ${renderDay(ui.calSelected)}`;
+    <div class="cal-card">
+      <div class="cal-nav"><strong>${label}</strong>
+        <span class="navs"><button data-action="cal-prev" aria-label="Vorheriger Monat">${icon('chevronLeft', 22, 2.4)}</button>
+        <button data-action="cal-next" aria-label="Nächster Monat">${icon('chevron', 22, 2.4)}</button></span></div>
+      <div class="cal-grid">${['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(w => `<div class="cal-wd">${w}</div>`).join('')}${cells}</div>
+      <div class="legend">${MOODS.map(x => `<span><i style="background:${MOOD_COLORS[x.v]}"></i>${x.emoji}</span>`).join('')}<span><i style="background:var(--tertiary);width:6px;height:6px"></i>Dones</span></div>
+    </div>
+    <div class="sec-head" style="margin-top:24px"><h2>${esc(fmtDayLong(ui.calSelected))}</h2></div>
+    <div class="day-actions">
+      <button class="pill-btn" data-action="new-done" data-day="${ui.calSelected}">${icon('plus', 16, 2.4)}Done</button>
+      <button class="pill-btn" data-action="new-gratitude" data-day="${ui.calSelected}">${icon('plus', 16, 2.4)}Dankbarkeit</button>
+    </div>
+    ${renderDay(ui.calSelected, ui.calSelected === todayK)}`;
 }
 
 // --- Lebensziele ---
 function renderGoals() {
-  let html = `<button class="btn secondary full" data-action="new-goal">＋ Neues Lebensziel</button>`;
+  let html = `<p class="date-sub">Was dir im Leben wichtig ist</p>`;
   if (!data.goals.length) {
-    return html + `<div class="card empty" style="margin-top:14px">Noch keine Ziele. Was möchtest du in deinem Leben erreichen? Dones kannst du später einem Ziel zuordnen.</div>`;
+    html += `<div class="list" style="margin-top:20px">${emptyCell('Noch keine Ziele. Dones kannst du später einem Ziel zuordnen.')}</div>`;
   }
   for (const [status, label] of Object.entries(GOAL_STATUS)) {
     const gs = data.goals.filter(g => g.status === status);
     if (!gs.length) continue;
-    html += `<h3 class="section">${label} <span class="count">${gs.length}</span></h3><div class="card">`;
-    html += gs.map(g => {
+    html += secHead(label, gs.length);
+    html += `<div class="list">${gs.map(g => {
       const n = data.dones.filter(d => d.goalId === g.id).length;
-      return `<button class="row" data-action="open-goal" data-id="${g.id}">
-        <span class="row-icon">🎯</span>
-        <span class="row-main"><span>${esc(g.title)}</span><small>${esc(g.area)} · ${n} Done${n === 1 ? '' : 's'}</small></span>
-        <span class="chev">›</span></button>`;
-    }).join('');
-    html += `</div>`;
+      return cell({ lead: badge('target', status === 'done' ? '#34C759' : status === 'paused' ? '#8E8E93' : '#FF3B30'),
+        title: esc(g.title), sub: `${esc(g.area)} · ${plural(n, 'Done', 'Dones')}`, acc: chevron(), action: 'open-goal', attrs: `data-id="${g.id}"` });
+    }).join('')}</div>`;
   }
+  html += `<div class="list" style="margin-top:20px">${cell({ lead: badge('plus', 'var(--accent)'), title: 'Neues Lebensziel', action: 'new-goal', cls: 'action' })}</div>`;
   return html;
 }
 
-// --- Mehr (Einstellungen, Export, Erinnerungen) ---
+// --- Mehr ---
 function renderMore() {
   const s = data.settings;
-  const graceOpts = [0, 1, 5, 15, 30].map(v => `<option value="${v}" ${v === s.graceMinutes ? 'selected' : ''}>${v === 0 ? 'sofort' : v + ' Min.'}</option>`).join('');
+  const graceOpts = [0, 1, 5, 15, 30].map(v => `<option value="${v}" ${v === s.graceMinutes ? 'selected' : ''}>${v === 0 ? 'Sofort' : v + ' Min.'}</option>`).join('');
+
+  const cats = data.categories.map(c => `
+    <div class="cell">
+      <span class="cell-lead">${badge(c.icon, c.color)}</span>
+      <span class="cell-body">
+        <button class="cell-text" data-action="edit-cat" data-id="${c.id}" style="text-align:left"><span class="cell-title" style="${c.hidden ? 'color:var(--secondary)' : ''}">${esc(c.name)}</span></button>
+        <input type="checkbox" class="switch" data-change="cat-visible" data-id="${c.id}" ${c.hidden ? '' : 'checked'} aria-label="${esc(c.name)} anzeigen">
+      </span>
+    </div>`).join('');
+
   const favs = data.favorites.length
-    ? data.favorites.map(f => `<div class="row static"><span class="row-icon">${catIcon(f.category)}</span><span class="row-main"><span>${esc(f.text)}</span><small>${esc(f.category)}</small></span><button class="btn small danger" data-action="del-fav" data-id="${f.id}">Entfernen</button></div>`).join('')
-    : `<div class="empty">Noch keine Favoriten. Beim Eintragen eines Dones „Als Favorit merken“ anhaken.</div>`;
+    ? data.favorites.map(f => cell({ lead: catBadge(f.category), title: esc(f.text), sub: esc(f.category),
+        acc: `<button class="icon-btn" data-action="del-fav" data-id="${f.id}" aria-label="Entfernen">${icon('xmark', 16, 2.4)}</button>` })).join('')
+    : emptyCell('Im Done-Fenster auf den Stern tippen, um einen Eintrag als Favorit zu merken.');
 
   return `
-    <h3 class="section">Zugriffsschutz</h3>
-    <div class="card pad">
-      <div class="setting">
-        <div><strong>Face ID-Sperre</strong><small>${s.lockEnabled ? 'Aktiv' : 'Aus'}</small></div>
-        ${s.lockEnabled
-          ? `<button class="btn small danger" data-action="lock-disable">Ausschalten</button>`
-          : `<button class="btn small" data-action="lock-enable">Einrichten</button>`}
-      </div>
-      <div class="setting">
-        <div><strong>Kulanzzeit</strong><small>Keine erneute Abfrage, wenn die App nur kurz weg war</small></div>
-        <select data-change="grace">${graceOpts}</select>
-      </div>
-      ${s.lockEnabled ? `<button class="btn secondary full" data-action="lock-now">🔒 Jetzt sperren</button>` : ''}
+    <div class="group-label">Sicherheit</div>
+    <div class="list">
+      <div class="cell"><span class="cell-lead">${badge('faceid', '#34C759')}</span><span class="cell-body"><span class="cell-text"><span class="cell-title">Face ID-Sperre</span></span>
+        <input type="checkbox" class="switch" data-change="lock" ${s.lockEnabled ? 'checked' : ''} aria-label="Face ID-Sperre"></span></div>
+      <div class="cell"><span class="cell-lead">${badge('timer', '#8E8E93')}</span><span class="cell-body"><span class="cell-text"><span class="cell-title">Kulanzzeit</span></span>
+        <select class="inline" data-change="grace">${graceOpts}</select></span></div>
+      ${s.lockEnabled ? cell({ lead: badge('lock', '#007AFF'), title: 'Jetzt sperren', action: 'lock-now', cls: 'action' }) : ''}
     </div>
+    <p class="group-foot">Kulanzzeit: Keine erneute Abfrage, wenn die App nur kurz im Hintergrund war.</p>
 
-    <h3 class="section">Erinnerungen</h3>
-    <div class="card pad">
-      <div style="font-size:15px">Web-Apps können auf dem iPhone keine Erinnerungen planen. So richtest du sie in einer Minute mit der <strong>Erinnerungen-App</strong> ein:</div>
-      <ol class="steps">
-        <li>Erinnerungen-App öffnen → neue Erinnerung, z. B. <em>„💗 Wie fühlst du dich gerade?“</em></li>
-        <li>Datum &amp; Uhrzeit aktivieren, Uhrzeit wählen (z. B. 11:00)</li>
-        <li><em>Wiederholen → Täglich</em></li>
-        <li>Für weitere Check-ins wiederholen (z. B. 15:00, 18:00) und eine abends: <em>„🌙 Tagesfazit“</em></li>
-      </ol>
+    <div class="group-label">Done-Kategorien</div>
+    <div class="list">${cats}${cell({ lead: badge('plus', 'var(--accent)'), title: 'Kategorie hinzufügen', action: 'new-cat', cls: 'action' })}</div>
+    <p class="group-foot">Schalter aus = im Done-Fenster ausgeblendet. Antippen zum Bearbeiten.</p>
+
+    <div class="group-label">Schnellwahl-Favoriten</div>
+    <div class="list">${favs}</div>
+
+    <div class="group-label">Erinnerungen</div>
+    <div class="list">${cell({ lead: badge('bell', '#FF3B30'), title: 'So richtest du Erinnerungen ein',
+      sub: '1. Erinnerungen-App öffnen, neue Erinnerung „Wie fühlst du dich?“<br>2. Datum &amp; Uhrzeit aktivieren, Uhrzeit wählen<br>3. Wiederholen → Täglich<br>4. Für weitere Zeiten wiederholen, abends „Tagesfazit“' })}</div>
+    <p class="group-foot">Web-Apps können auf dem iPhone keine Erinnerungen planen, daher über Apples Erinnerungen-App.</p>
+
+    <div class="group-label">Export &amp; Backup</div>
+    <div class="list">
+      <div class="cell"><span class="cell-lead">${badge('calendar', '#5856D6')}</span><span class="cell-body"><span class="cell-text"><span class="cell-title">Zeitraum für KI-Export</span></span>
+        <select class="inline" id="export-range"><option value="7">7 Tage</option><option value="30" selected>30 Tage</option><option value="90">90 Tage</option><option value="365">1 Jahr</option><option value="all">Alles</option></select></span></div>
+      ${cell({ lead: badge('share', '#007AFF'), title: 'Für KI exportieren', sub: 'Markdown-Datei über das Teilen-Menü', action: 'export-md', acc: chevron() })}
+      ${cell({ lead: badge('copy', '#007AFF'), title: 'Als Text kopieren', sub: 'Zum Einfügen in eine KI-App', action: 'copy-md', acc: chevron() })}
+      ${cell({ lead: badge('archive', '#8E8E93'), title: 'Backup speichern', sub: 'JSON, z. B. in iCloud Drive', action: 'export-json', acc: chevron() })}
+      ${cell({ lead: badge('restore', '#8E8E93'), title: 'Backup einspielen', action: 'import-json', acc: chevron() })}
     </div>
+    <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <h3 class="section">Export &amp; Backup</h3>
-    <div class="card pad">
-      <div class="setting">
-        <div><strong>Zeitraum</strong><small>für den KI-Export</small></div>
-        <select id="export-range">
-          <option value="7">7 Tage</option><option value="30" selected>30 Tage</option>
-          <option value="90">90 Tage</option><option value="365">1 Jahr</option><option value="all">Alles</option>
-        </select>
-      </div>
-      <button class="btn full" data-action="export-md">📝 Für KI exportieren (Markdown)</button>
-      <button class="btn secondary full" data-action="copy-md">📋 Als Text kopieren (zum Einfügen in eine KI)</button>
-      <button class="btn secondary full" data-action="export-json">💾 Backup speichern (JSON)</button>
-      <button class="btn secondary full" data-action="import-json">📂 Backup einspielen</button>
-      <p class="muted" style="font-size:13px;margin:10px 0 0">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone. Wenn du die App vom Home-Bildschirm löschst, sind sie weg, deshalb regelmäßig sichern (z. B. in iCloud Drive).</p>
-    </div>
-
-    <h3 class="section">Schnellwahl-Favoriten</h3>
-    <div class="card">${favs}</div>
-
-    <h3 class="section">Über</h3>
-    <div class="card pad"><small class="muted">Wellbeing v1.0 · ${data.dones.length} Dones · ${data.checkins.length} Check-ins · ${Object.keys(data.reflections).length} Tagesfazits · ${data.goals.length} Ziele</small></div>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.1 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
 }
 
 /* =========================================================
-   5. EINGABEFENSTER (Sheet) – allgemeine Steuerung
+   6. SHEET-STEUERUNG (inkl. Fix gegen das Springen nach unten)
    ========================================================= */
 let sheetSave = null;
+let sheetDismissSaves = false;
+let savedScrollY = 0;
 
-function openSheet(title, body, onSave, saveLabel = 'Sichern') {
+function openSheet(title, body, onSave, { saveLabel = 'Sichern', cancel = true } = {}) {
   $('#sheet-title').textContent = title;
   $('#sheet-body').innerHTML = body;
   $('#sheet-body').scrollTop = 0;
-  const btn = $('#sheet-save');
-  btn.textContent = saveLabel;
-  btn.style.visibility = onSave ? 'visible' : 'hidden';
+  $('#sheet-save').textContent = saveLabel;
+  $('#sheet-save').style.visibility = onSave ? 'visible' : 'hidden';
+  $('#sheet-cancel').style.visibility = cancel ? 'visible' : 'hidden';
   sheetSave = onSave;
+  sheetDismissSaves = !cancel; // Mehrfach-Eingabe: Wegwischen = Fertig
+  // Seite im Hintergrund einfrieren, damit iOS beim Tastatur-Öffnen nichts verschiebt
+  savedScrollY = window.scrollY;
+  document.body.style.position = 'fixed';
+  document.body.style.top = `-${savedScrollY}px`;
+  document.body.style.width = '100%';
   $('#sheet').classList.add('open');
   $('#sheet').setAttribute('aria-hidden', 'false');
   $('#backdrop').classList.add('open');
-  document.documentElement.classList.add('noscroll');
 }
 
 function closeSheet() {
   if (document.activeElement) document.activeElement.blur();
   $('#sheet').classList.remove('open');
   $('#sheet').setAttribute('aria-hidden', 'true');
+  $('#sheet').style.height = '';
+  $('#sheet').style.bottom = '';
   $('#backdrop').classList.remove('open');
-  document.documentElement.classList.remove('noscroll');
+  document.body.style.position = '';
+  document.body.style.top = '';
+  document.body.style.width = '';
+  window.scrollTo(0, savedScrollY);
   sheetSave = null;
 }
 
-function chip(label, on, attrs) {
-  return `<button type="button" class="chip ${on ? 'on' : ''}" ${attrs}>${esc(label)}</button>`;
+// Textfeld aktivieren, ohne dass Safari die Ansicht verschiebt
+function focusNoScroll(el) {
+  if (!el) return;
+  try { el.focus({ preventScroll: true }); } catch (e) { el.focus(); }
+  $('#sheet-body').scrollTop = 0;
 }
 
-// 1–5-Knöpfe (mit Emoji für Stimmung, als Zahl für Schlaf/Energie)
+// Sheet an den sichtbaren Bereich über der Tastatur anpassen
+function fitSheetToKeyboard() {
+  const vv = window.visualViewport;
+  const s = $('#sheet');
+  if (!vv || !s.classList.contains('open')) return;
+  const top = s.getBoundingClientRect().top + vv.offsetTop;
+  s.style.bottom = 'auto';
+  s.style.height = Math.max(240, vv.height + vv.offsetTop - top) + 'px';
+}
+if (window.visualViewport) {
+  visualViewport.addEventListener('resize', fitSheetToKeyboard);
+  visualViewport.addEventListener('scroll', fitSheetToKeyboard);
+}
+
+const chip = (label, on, attrs, lead = '') =>
+  `<button type="button" class="chip ${on ? 'on' : ''}" ${attrs}>${lead}<span class="ck">${icon('check', 14, 2.6)}</span>${esc(label)}</button>`;
+
 function scaleButtons(field, current, withEmoji = false) {
   return [1, 2, 3, 4, 5].map(v => `
     <button type="button" class="scale-btn ${current === v ? 'on' : ''}" data-action="pick-scale" data-field="${field}" data-value="${v}"
-      ${withEmoji ? `style="--c:${MOOD_COLORS[v]}"` : ''}>
-      ${withEmoji ? `<span class="emo">${MOODS[v - 1].emoji}</span><small>${v}</small>` : v}
-    </button>`).join('');
+      style="--c:${withEmoji ? MOOD_COLORS[v] : 'var(--accent)'}">
+      ${withEmoji ? `<span class="emo">${MOODS[v - 1].emoji}</span><small>${v}</small>` : v}</button>`).join('');
 }
 
 /* =========================================================
-   6. DONE EINTRAGEN
+   7. DONE – mehrere Einträge am Stück
    ========================================================= */
-// Schnellwahl: Favoriten + zuletzt benutzte Dones → 1 Tap speichert
 function quickPicks() {
-  const seen = new Set();
-  const items = [];
-  for (const f of data.favorites) {
-    if (!seen.has(f.text)) { seen.add(f.text); items.push({ ...f, fav: true }); }
-  }
+  const seen = new Set(), items = [];
+  for (const f of data.favorites) if (!seen.has(f.text)) { seen.add(f.text); items.push({ ...f, fav: true }); }
   const recent = [...data.dones].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   for (const d of recent) {
     if (items.length >= 10) break;
     if (!seen.has(d.text)) { seen.add(d.text); items.push({ text: d.text, category: d.category, goalId: d.goalId || '' }); }
   }
-  return items.map(it => `
-    <button type="button" class="chip quick" data-action="quick-done" data-text="${esc(it.text)}" data-cat="${esc(it.category)}" data-goal="${esc(it.goalId || '')}">
-      ${it.fav ? '⭐ ' : ''}${catIcon(it.category)} ${esc(it.text)}</button>`).join('');
+  return items.map(it => {
+    const c = catInfo(it.category);
+    return `<button type="button" class="chip" style="--c:${c.color}" data-action="quick-done" data-text="${esc(it.text)}" data-cat="${esc(it.category)}" data-goal="${esc(it.goalId || '')}">
+      <span class="chip-badge">${icon(c.icon, 13, 2.4)}</span><span class="ck">${icon('check', 14, 2.6)}</span>${it.fav ? '★ ' : ''}${esc(it.text)}</button>`;
+  }).join('');
+}
+
+function categoryChips(selected, extraName) {
+  const list = visibleCategories();
+  if (extraName && !list.some(c => c.name === extraName)) list.push(catInfo(extraName));
+  return list.map(c => chip(c.name, c.name === selected, `data-action="pick-cat" data-value="${esc(c.name)}" style="--c:${c.color}"`,
+    `<span class="dot"></span>`)).join('');
+}
+
+function goalSelect(currentId) {
+  const goals = data.goals.filter(g => g.status === 'active' || g.id === currentId);
+  if (!goals.length) return '';
+  return `<div class="cell"><span class="cell-lead">${badge('target', '#FF3B30')}</span><span class="cell-body"><span class="cell-text"><span class="cell-title">Lebensziel</span></span>
+    <select class="inline" id="done-goal"><option value="">Keins</option>${goals.map(g => `<option value="${g.id}" ${g.id === currentId ? 'selected' : ''}>${esc(g.title)}</option>`).join('')}</select></span></div>`;
 }
 
 function openDoneSheet(day, existing = null) {
-  const d = existing || { text: '', category: null, date: day || dateKey(), goalId: null };
-  ui.draft = { category: d.category };
-  const quick = existing ? '' : quickPicks();
-  const goals = data.goals.filter(g => g.status === 'active' || g.id === d.goalId);
-
+  if (existing) return openDoneEdit(existing);
+  ui.draft = { category: null, added: [] };
   const body = `
-    <input id="done-text" class="input" type="text" placeholder="Was hast du geschafft?" value="${esc(d.text)}" enterkeyhint="done" autocomplete="off">
-    ${quick ? `<div class="label">Schnellwahl – antippen speichert sofort</div><div class="chips">${quick}</div>` : ''}
-    <div class="label">Kategorie <span class="muted">(ohne Auswahl: Sonstiges)</span></div>
-    <div class="chips">${CATEGORIES.map(c => chip(c.icon + ' ' + c.name, c.name === d.category, `data-action="pick-cat" data-value="${esc(c.name)}"`)).join('')}</div>
-    ${goals.length ? `
-      <div class="label">Zahlt ein auf Lebensziel (optional)</div>
-      <select id="done-goal" class="input"><option value="">– kein Ziel –</option>
-        ${goals.map(g => `<option value="${g.id}" ${g.id === d.goalId ? 'selected' : ''}>${esc(g.title)}</option>`).join('')}
-      </select>` : ''}
-    <div class="label">Datum</div>
-    <input id="done-date" class="input" type="date" value="${d.date}">
-    ${existing
-      ? `<button class="btn danger full" style="margin-top:24px" data-action="delete-done" data-id="${existing.id}">Done löschen</button>`
-      : `<label class="check"><input type="checkbox" id="done-fav"> ⭐ Als Favorit für die Schnellwahl merken</label>`}`;
-
-  openSheet(existing ? 'Done bearbeiten' : 'Neues Done', body, () => saveDone(existing));
-  // Tastatur sofort öffnen (funktioniert auf dem iPhone nur direkt nach einem Tap)
-  if (!existing) $('#done-text').focus();
+    <div class="list input-row">
+      <input id="done-text" class="field" type="text" placeholder="Was hast du geschafft?" enterkeyhint="send" autocomplete="off">
+      <button type="button" class="send-btn" data-action="done-add" aria-label="Hinzufügen">${icon('arrowUp', 18, 2.6)}</button>
+    </div>
+    <p class="sheet-note">Return fügt hinzu, dann direkt den nächsten Eintrag schreiben.</p>
+    <div id="done-added"></div>
+    ${data.dones.length || data.favorites.length ? `<div class="sheet-sec"><div class="sheet-label">Schnellwahl</div><div class="chips" id="quick-chips">${quickPicks()}</div></div>` : ''}
+    <div class="sheet-sec"><div class="sheet-label">Kategorie <span class="opt">(optional)</span></div><div class="chips">${categoryChips(null)}</div></div>
+    <div class="sheet-sec"><div class="list">
+      <div class="cell"><span class="cell-lead">${badge('calendar', '#FF3B30')}</span><span class="cell-body"><span class="cell-text"><span class="cell-title">Datum</span></span>
+        <input id="done-date" class="inline" type="date" value="${day || dateKey()}"></span></div>
+      ${goalSelect(null)}
+    </div></div>`;
+  openSheet('Erledigt', body, finishDoneSheet, { saveLabel: 'Fertig', cancel: false });
+  focusNoScroll($('#done-text'));
 }
 
-function saveDone(existing) {
-  const text = $('#done-text').value.trim();
-  if (!text) { shake($('#done-text')); $('#done-text').focus(); return; }
-  const date = $('#done-date').value || dateKey();
-  const goalEl = $('#done-goal');
-  const goalId = goalEl && goalEl.value ? goalEl.value : null;
-  const category = ui.draft.category || 'Sonstiges';
+function addDone(text, category, goalId) {
+  const entry = { id: uid(), text, category: category || 'Sonstiges', date: $('#done-date').value || dateKey(),
+    goalId: goalId || null, createdAt: new Date().toISOString() };
+  data.dones.push(entry);
+  ui.draft.added.push(entry.id);
+  save();
+  renderAdded();
+}
 
-  if (existing) {
-    Object.assign(existing, { text, category, date, goalId });
-  } else {
-    data.dones.push({ id: uid(), text, category, date, goalId, createdAt: new Date().toISOString() });
-    const fav = $('#done-fav');
-    if (fav && fav.checked && !data.favorites.some(f => f.text === text)) {
-      data.favorites.push({ id: uid(), text, category, goalId });
-    }
-  }
-  save(); closeSheet(); render();
-  toast(existing ? 'Gespeichert' : '✅ Done eingetragen');
+function addDoneFromInput() {
+  const input = $('#done-text');
+  const text = input.value.trim();
+  if (!text) { shake(input.parentElement); return; }
+  const goalEl = $('#done-goal');
+  addDone(text, ui.draft.category, goalEl && goalEl.value);
+  input.value = '';
+  focusNoScroll(input);
+}
+
+function renderAdded() {
+  const items = ui.draft.added.map(id => data.dones.find(d => d.id === id)).filter(Boolean);
+  $('#done-added').innerHTML = items.length ? `<div class="sheet-sec"><div class="sheet-label">Hinzugefügt (${items.length})</div><div class="list">
+    ${items.map(d => {
+      const fav = data.favorites.some(f => f.text === d.text);
+      return cell({ lead: catBadge(d.category), title: esc(d.text), sub: esc(d.category),
+        acc: `<button class="icon-btn ${fav ? 'on' : ''}" data-action="toggle-fav" data-id="${d.id}" aria-label="Favorit">${icon('star', 20, 1.9)}</button>
+              <button class="icon-btn" data-action="undo-done" data-id="${d.id}" aria-label="Entfernen">${icon('xmark', 16, 2.4)}</button>` });
+    }).join('')}</div></div>` : '';
+}
+
+function finishDoneSheet() {
+  const input = $('#done-text');
+  if (input && input.value.trim()) addDoneFromInput();
+  const n = ui.draft.added.length;
+  closeSheet(); render();
+  if (n) toast(`${plural(n, 'Done', 'Dones')} eingetragen`);
+}
+
+function openDoneEdit(d) {
+  ui.draft = { category: d.category };
+  const body = `
+    <div class="list"><input id="done-text" class="field" type="text" value="${esc(d.text)}" enterkeyhint="done" autocomplete="off"></div>
+    <div class="sheet-sec"><div class="sheet-label">Kategorie</div><div class="chips">${categoryChips(d.category, d.category)}</div></div>
+    <div class="sheet-sec"><div class="list">
+      <div class="cell"><span class="cell-lead">${badge('calendar', '#FF3B30')}</span><span class="cell-body"><span class="cell-text"><span class="cell-title">Datum</span></span>
+        <input id="done-date" class="inline" type="date" value="${d.date}"></span></div>
+      ${goalSelect(d.goalId)}
+    </div></div>
+    <div class="sheet-sec"><div class="list">${cell({ title: 'Done löschen', action: 'delete-done', attrs: `data-id="${d.id}"`, cls: 'destructive' })}</div></div>`;
+  openSheet('Done bearbeiten', body, () => {
+    const text = $('#done-text').value.trim();
+    if (!text) { shake($('#done-text').parentElement); return; }
+    const goalEl = $('#done-goal');
+    Object.assign(d, { text, category: ui.draft.category || 'Sonstiges', date: $('#done-date').value || d.date, goalId: goalEl && goalEl.value ? goalEl.value : null });
+    save(); closeSheet(); render(); toast('Gespeichert');
+  });
 }
 
 /* =========================================================
-   7. GEFÜHLS-CHECK-IN
+   8. DANKBARKEIT – mehrere Einträge am Stück
    ========================================================= */
-function allEmotions() {
-  return EMOTION_GROUPS.flatMap(g => g.items).concat(data.customEmotions);
+function openGratitudeSheet(day) {
+  ui.draft = { day: day || dateKey() };
+  const isToday = ui.draft.day === dateKey();
+  const body = `
+    <div class="list input-row">
+      <input id="grat-text" class="field" type="text" placeholder="Wofür bist du dankbar?" enterkeyhint="send" autocomplete="off">
+      <button type="button" class="send-btn" data-action="grat-add" aria-label="Hinzufügen">${icon('arrowUp', 18, 2.6)}</button>
+    </div>
+    <p class="sheet-note">${isToday ? 'Heute' : esc(fmtDayLong(ui.draft.day))} · Return fügt hinzu, dann direkt weiterschreiben.</p>
+    <div id="grat-list"></div>`;
+  openSheet('Dankbar für', body, finishGratitudeSheet, { saveLabel: 'Fertig', cancel: false });
+  renderGratList();
+  focusNoScroll($('#grat-text'));
 }
+
+function renderGratList() {
+  const items = gratitudeOn(ui.draft.day);
+  $('#grat-list').innerHTML = items.length ? `<div class="sheet-sec"><div class="sheet-label">Einträge (${items.length})</div><div class="list">
+    ${items.map(g => cell({ lead: badge('sparkles', GRAT_COLOR), title: esc(g.text),
+      acc: `<button class="icon-btn" data-action="del-grat" data-id="${g.id}" aria-label="Entfernen">${icon('xmark', 16, 2.4)}</button>` })).join('')}
+    </div></div>` : '';
+}
+
+function addGratitudeFromInput() {
+  const input = $('#grat-text');
+  const text = input.value.trim();
+  if (!text) { shake(input.parentElement); return; }
+  data.gratitude.push({ id: uid(), text, date: ui.draft.day, createdAt: new Date().toISOString() });
+  save();
+  input.value = '';
+  renderGratList();
+  focusNoScroll(input);
+}
+
+function finishGratitudeSheet() {
+  const input = $('#grat-text');
+  if (input && input.value.trim()) addGratitudeFromInput();
+  closeSheet(); render();
+}
+
+/* =========================================================
+   9. GEFÜHLS-CHECK-IN
+   ========================================================= */
+const allEmotions = () => EMOTION_GROUPS.flatMap(g => g.items).concat(data.customEmotions);
 function frequentEmotions(n) {
   const count = {};
   data.checkins.forEach(c => c.emotions.forEach(e => { count[e] = (count[e] || 0) + 1; }));
   return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, n).map(([e]) => e);
 }
-function emoChip(e) {
-  return chip(e, ui.draft.emotions.has(e), `data-action="toggle-emotion" data-value="${esc(e)}" style="--c:${emotionColor(e)}"`);
-}
+const emoChip = e => chip(e, ui.draft.emotions.has(e), `data-action="toggle-emotion" data-value="${esc(e)}" style="--c:${emotionColor(e)}"`, `<span class="dot"></span>`);
 function emotionChips() {
   let h = '';
   const freq = frequentEmotions(8);
-  if (freq.length) h += `<div class="group"><div class="group-name">⭐ Häufig</div><div class="chips">${freq.map(emoChip).join('')}</div></div>`;
-  for (const g of EMOTION_GROUPS) {
-    h += `<div class="group"><div class="group-name" style="color:${g.color}">${g.name}</div><div class="chips">${g.items.map(emoChip).join('')}</div></div>`;
-  }
-  if (data.customEmotions.length) {
-    h += `<div class="group"><div class="group-name">Eigene</div><div class="chips">${data.customEmotions.map(emoChip).join('')}</div></div>`;
-  }
+  if (freq.length) h += `<div class="emo-group"><div class="emo-group-name">Häufig</div><div class="chips">${freq.map(emoChip).join('')}</div></div>`;
+  for (const g of EMOTION_GROUPS) h += `<div class="emo-group"><div class="emo-group-name" style="color:${g.color}">${g.name}</div><div class="chips">${g.items.map(emoChip).join('')}</div></div>`;
+  if (data.customEmotions.length) h += `<div class="emo-group"><div class="emo-group-name">Eigene</div><div class="chips">${data.customEmotions.map(emoChip).join('')}</div></div>`;
   return h;
 }
 
 function openCheckinSheet(existing = null) {
   const c = existing || { mood: null, emotions: [], triggers: [], note: '' };
   ui.draft = { mood: c.mood, emotions: new Set(c.emotions), triggers: new Set(c.triggers) };
-
   const body = `
-    <div class="label" style="margin-top:4px">Wie geht es dir gerade?</div>
-    <div class="moods" id="ci-moods">${scaleButtons('mood', c.mood, true)}</div>
-    <div class="label">Was fühlst du? <span class="muted">(mehrere möglich)</span></div>
-    <div id="ci-emotions">${emotionChips()}</div>
-    <div class="add-row">
-      <input id="ci-custom" class="input" placeholder="Eigenes Gefühl hinzufügen" enterkeyhint="done" autocomplete="off">
-      <button type="button" class="btn small" data-action="add-emotion">＋</button>
-    </div>
-    <div class="label">Auslöser <span class="muted">(optional)</span></div>
-    <div class="chips">${TRIGGERS.map(t => chip(t, ui.draft.triggers.has(t), `data-action="toggle-trigger" data-value="${esc(t)}"`)).join('')}</div>
-    <div class="label">Notiz <span class="muted">(optional)</span></div>
-    <textarea id="ci-note" class="input" rows="3" placeholder="Was geht dir durch den Kopf?">${esc(c.note)}</textarea>
-    ${existing ? `
-      <p class="muted" style="font-size:13px">Eingetragen am ${esc(fmtDayLong(dateKey(new Date(c.ts))))} um ${fmtTime(c.ts)} Uhr</p>
-      <button class="btn danger full" data-action="delete-checkin" data-id="${existing.id}">Check-in löschen</button>` : ''}`;
-
-  openSheet(existing ? 'Check-in bearbeiten' : 'Gefühls-Check-in', body, () => saveCheckin(existing));
+    <div class="sheet-label" style="margin-top:6px">Wie geht es dir gerade?</div>
+    <div class="scale" id="ci-moods">${scaleButtons('mood', c.mood, true)}</div>
+    <div class="sheet-sec"><div class="sheet-label">Was fühlst du? <span class="opt">(mehrere möglich)</span></div>
+      <div id="ci-emotions">${emotionChips()}</div>
+      <div class="list input-row" style="margin-top:4px">
+        <input id="ci-custom" class="field" placeholder="Eigenes Gefühl hinzufügen" enterkeyhint="done" autocomplete="off">
+        <button type="button" class="send-btn" data-action="add-emotion" aria-label="Hinzufügen">${icon('plus', 18, 2.6)}</button>
+      </div></div>
+    <div class="sheet-sec"><div class="sheet-label">Auslöser <span class="opt">(optional)</span></div>
+      <div class="chips">${TRIGGERS.map(t => chip(t, ui.draft.triggers.has(t), `data-action="toggle-trigger" data-value="${esc(t)}"`)).join('')}</div></div>
+    <div class="sheet-sec"><div class="sheet-label">Notiz <span class="opt">(optional)</span></div>
+      <div class="list"><textarea id="ci-note" class="field" rows="3" placeholder="Was geht dir durch den Kopf?">${esc(c.note)}</textarea></div></div>
+    ${existing ? `<p class="sheet-note">Eingetragen am ${esc(fmtDayLong(dateKey(new Date(c.ts))))} um ${fmtTime(c.ts)} Uhr</p>
+      <div class="sheet-sec"><div class="list">${cell({ title: 'Check-in löschen', action: 'delete-checkin', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div></div>` : ''}`;
+  openSheet(existing ? 'Check-in bearbeiten' : 'Gefühl', body, () => saveCheckin(existing));
 }
 
 function addCustomEmotion(name) {
@@ -719,92 +999,76 @@ function addCustomEmotion(name) {
 }
 
 function saveCheckin(existing) {
-  if (!ui.draft.mood) { toast('Bitte zuerst die Stimmung wählen'); shake($('#ci-moods')); $('#sheet-body').scrollTop = 0; return; }
+  if (!ui.draft.mood) { toast('Bitte zuerst die Stimmung wählen', false); shake($('#ci-moods')); $('#sheet-body').scrollTop = 0; return; }
   const custom = $('#ci-custom').value;
   if (custom.trim()) addCustomEmotion(custom);
-  const entry = {
-    mood: ui.draft.mood,
-    emotions: [...ui.draft.emotions],
-    triggers: [...ui.draft.triggers],
-    note: $('#ci-note').value.trim(),
-  };
+  const entry = { mood: ui.draft.mood, emotions: [...ui.draft.emotions], triggers: [...ui.draft.triggers], note: $('#ci-note').value.trim() };
   if (existing) Object.assign(existing, entry);
   else data.checkins.push({ id: uid(), ts: new Date().toISOString(), ...entry });
   save(); closeSheet(); render();
-  toast(existing ? 'Gespeichert' : '💗 Check-in gespeichert');
+  toast(existing ? 'Gespeichert' : 'Check-in gespeichert');
 }
 
 /* =========================================================
-   8. TAGESFAZIT
+   10. TAGESFAZIT
    ========================================================= */
 function openReflectionSheet(k) {
-  const r = data.reflections[k] || { mood: null, text: '', sleep: null, energy: null, gratitude: [] };
+  const r = data.reflections[k] || { mood: null, text: '', sleep: null, energy: null };
   ui.draft = { mood: r.mood, sleep: r.sleep, energy: r.energy };
-  const cis = checkinsOn(k), dones = donesOn(k);
+  const cis = checkinsOn(k), dones = donesOn(k), grats = gratitudeOn(k);
   const avg = cis.length ? (cis.reduce((s, c) => s + c.mood, 0) / cis.length).toFixed(1).replace('.', ',') : null;
-
   const emoCount = {};
   cis.forEach(c => c.emotions.forEach(e => { emoCount[e] = (emoCount[e] || 0) + 1; }));
   const topEmos = Object.entries(emoCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
-  const g = r.gratitude || [];
 
   const body = `
-    <div class="card pad summary">
+    <div class="summary-card">
       <strong>${esc(fmtDayLong(k))}</strong><br>
-      ${dones.length} Done${dones.length === 1 ? '' : 's'} · ${cis.length} Check-in${cis.length === 1 ? '' : 's'}${avg ? ` · Ø Stimmung ${avg}` : ''}
+      <span class="muted">${plural(dones.length, 'Done', 'Dones')} · ${plural(cis.length, 'Check-in', 'Check-ins')}${avg ? ` · Ø Stimmung ${avg}` : ''}</span>
       ${cis.length ? `<div class="curve">${cis.map(c => `<span><b style="height:${c.mood * 20}%;background:${MOOD_COLORS[c.mood]}"></b><small>${fmtTime(c.ts)}</small></span>`).join('')}</div>` : ''}
-      ${topEmos.length ? `<div class="muted">Gefühle: ${topEmos.map(([e, n]) => esc(e) + (n > 1 ? ` (${n}×)` : '')).join(', ')}</div>` : ''}
+      ${topEmos.length ? `<div class="muted" style="margin-top:6px">Gefühle: ${topEmos.map(([e, n]) => esc(e) + (n > 1 ? ` (${n}×)` : '')).join(', ')}</div>` : ''}
+      ${grats.length ? `<div class="muted" style="margin-top:6px">Dankbar für: ${grats.map(g => esc(g.text)).join(' · ')}</div>` : ''}
     </div>
-    <div class="label">Gesamtstimmung des Tages</div>
-    <div class="moods" id="rf-moods">${scaleButtons('mood', r.mood, true)}</div>
-    <div class="label">Wie war dein Tag?</div>
-    <textarea id="rf-text" class="input" rows="4" placeholder="Dein Fazit in ein paar Sätzen …">${esc(r.text)}</textarea>
-    <div class="label">Schlafqualität <span class="muted">(optional)</span></div>
-    <div class="scale">${scaleButtons('sleep', r.sleep)}</div>
-    <div class="label">Energie <span class="muted">(optional)</span></div>
-    <div class="scale">${scaleButtons('energy', r.energy)}</div>
-    <div class="label">Dafür bin ich dankbar <span class="muted">(optional)</span></div>
-    ${[0, 1, 2].map(i => `<input class="input rf-grat" placeholder="${i + 1}." value="${esc(g[i] || '')}" autocomplete="off">`).join('')}
-    ${data.reflections[k] ? `<button class="btn danger full" style="margin-top:24px" data-action="delete-reflection" data-day="${k}">Fazit löschen</button>` : ''}`;
-
+    <div class="sheet-sec"><div class="sheet-label">Gesamtstimmung des Tages</div><div class="scale" id="rf-moods">${scaleButtons('mood', r.mood, true)}</div></div>
+    <div class="sheet-sec"><div class="sheet-label">Wie war dein Tag?</div>
+      <div class="list"><textarea id="rf-text" class="field" rows="4" placeholder="Dein Fazit in ein paar Sätzen …">${esc(r.text)}</textarea></div></div>
+    <div class="sheet-sec"><div class="sheet-label">Schlafqualität <span class="opt">(optional)</span></div><div class="scale">${scaleButtons('sleep', r.sleep)}</div></div>
+    <div class="sheet-sec"><div class="sheet-label">Energie <span class="opt">(optional)</span></div><div class="scale">${scaleButtons('energy', r.energy)}</div></div>
+    ${data.reflections[k] ? `<div class="sheet-sec"><div class="list">${cell({ title: 'Fazit löschen', action: 'delete-reflection', attrs: `data-day="${k}"`, cls: 'destructive' })}</div></div>` : ''}`;
   openSheet('Tagesfazit', body, () => saveReflection(k));
 }
 
 function saveReflection(k) {
-  if (!ui.draft.mood) { toast('Bitte die Gesamtstimmung wählen'); shake($('#rf-moods')); return; }
-  const gratitude = [...document.querySelectorAll('.rf-grat')].map(i => i.value.trim()).filter(Boolean);
-  data.reflections[k] = {
-    mood: ui.draft.mood, text: $('#rf-text').value.trim(),
-    sleep: ui.draft.sleep || null, energy: ui.draft.energy || null, gratitude,
-  };
+  if (!ui.draft.mood) { toast('Bitte die Gesamtstimmung wählen', false); shake($('#rf-moods')); return; }
+  data.reflections[k] = { mood: ui.draft.mood, text: $('#rf-text').value.trim(), sleep: ui.draft.sleep || null, energy: ui.draft.energy || null };
   save(); closeSheet(); render();
-  toast('🌙 Tagesfazit gespeichert');
+  toast('Tagesfazit gespeichert');
 }
 
 /* =========================================================
-   9. LEBENSZIELE
+   11. LEBENSZIELE
    ========================================================= */
 function openGoalSheet(existing = null) {
   const g = existing || { title: '', description: '', area: LIFE_AREAS[0], status: 'active' };
   const linked = existing ? data.dones.filter(d => d.goalId === existing.id).sort((a, b) => b.date.localeCompare(a.date)) : [];
-
   const body = `
-    <input id="g-title" class="input" placeholder="Ziel, z. B. „Halbmarathon laufen“" value="${esc(g.title)}" autocomplete="off">
-    <textarea id="g-desc" class="input" rows="3" placeholder="Warum ist dir das wichtig?">${esc(g.description)}</textarea>
-    <div class="label">Lebensbereich</div>
-    <select id="g-area" class="input">${LIFE_AREAS.map(a => `<option ${a === g.area ? 'selected' : ''}>${a}</option>`).join('')}</select>
-    <div class="label">Status</div>
-    <select id="g-status" class="input">${Object.entries(GOAL_STATUS).map(([v, l]) => `<option value="${v}" ${v === g.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    <div class="list">
+      <div class="cell"><span class="cell-body" style="padding:0 16px 0 0"><input id="g-title" class="field" style="padding-left:0" placeholder="Ziel, z. B. Halbmarathon laufen" value="${esc(g.title)}" autocomplete="off"></span></div>
+      <div class="cell"><span class="cell-body" style="padding:0 16px 0 0"><textarea id="g-desc" class="field" style="padding-left:0" rows="3" placeholder="Warum ist dir das wichtig?">${esc(g.description)}</textarea></span></div>
+    </div>
+    <div class="sheet-sec"><div class="list">
+      <div class="cell"><span class="cell-body"><span class="cell-text"><span class="cell-title">Lebensbereich</span></span>
+        <select class="inline" id="g-area">${LIFE_AREAS.map(a => `<option ${a === g.area ? 'selected' : ''}>${a}</option>`).join('')}</select></span></div>
+      <div class="cell"><span class="cell-body"><span class="cell-text"><span class="cell-title">Status</span></span>
+        <select class="inline" id="g-status">${Object.entries(GOAL_STATUS).map(([v, l]) => `<option value="${v}" ${v === g.status ? 'selected' : ''}>${l}</option>`).join('')}</select></span></div>
+    </div></div>
     ${existing ? `
-      <div class="label">Darauf eingezahlt (${linked.length})</div>
-      <div class="card">${linked.length
-        ? linked.slice(0, 50).map(d => `<div class="row static"><span class="row-icon">${catIcon(d.category)}</span><span class="row-main"><span>${esc(d.text)}</span><small>${esc(fmtDayShort(d.date))}</small></span></div>`).join('')
-        : `<div class="empty">Noch keine Dones verknüpft. Wähle das Ziel beim Eintragen eines Dones aus.</div>`}
-      </div>
-      <button class="btn danger full" style="margin-top:24px" data-action="delete-goal" data-id="${existing.id}">Ziel löschen</button>` : ''}`;
-
+      <div class="sheet-sec"><div class="sheet-label">Darauf eingezahlt (${linked.length})</div><div class="list">${linked.length
+        ? linked.slice(0, 50).map(d => cell({ lead: catBadge(d.category), title: esc(d.text), sub: esc(fmtDayShort(d.date)) })).join('')
+        : emptyCell('Noch keine Dones verknüpft. Wähle das Ziel beim Eintragen eines Dones aus.')}</div></div>
+      <div class="sheet-sec"><div class="list">${cell({ title: 'Ziel löschen', action: 'delete-goal', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div></div>` : ''}`;
   openSheet(existing ? 'Lebensziel' : 'Neues Lebensziel', body, () => saveGoal(existing));
-  if (!existing) $('#g-title').focus();
+  if (!existing) focusNoScroll($('#g-title'));
 }
 
 function saveGoal(existing) {
@@ -813,19 +1077,56 @@ function saveGoal(existing) {
   const fields = { title, description: $('#g-desc').value.trim(), area: $('#g-area').value, status: $('#g-status').value };
   if (existing) Object.assign(existing, fields);
   else data.goals.push({ id: uid(), createdAt: new Date().toISOString(), ...fields });
-  save(); closeSheet(); render();
-  toast('🎯 Ziel gespeichert');
+  save(); closeSheet(); render(); toast('Ziel gespeichert');
 }
 
 /* =========================================================
-   10. EXPORT (Markdown für KI, JSON als Backup) & IMPORT
+   12. KATEGORIEN VERWALTEN
+   ========================================================= */
+function openCategorySheet(existing = null) {
+  const c = existing || { name: '', icon: 'star', color: '#007AFF', hidden: false };
+  ui.draft = { icon: c.icon, color: c.color };
+  const used = existing ? data.dones.filter(d => d.category === existing.name).length : 0;
+  const body = `
+    <div style="display:flex;justify-content:center;margin:8px 0 18px" id="cat-preview">${catPreview()}</div>
+    <div class="list"><input id="cat-name" class="field" placeholder="Name der Kategorie" value="${esc(c.name)}" autocomplete="off" maxlength="24"></div>
+    <div class="sheet-sec"><div class="sheet-label">Farbe</div><div class="list"><div class="color-grid">
+      ${IOS_COLORS.map(col => `<button type="button" class="color-pick ${col === c.color ? 'on' : ''}" style="--c:${col}" data-action="pick-cat-color" data-value="${col}" aria-label="Farbe"></button>`).join('')}
+    </div></div></div>
+    <div class="sheet-sec"><div class="sheet-label">Symbol</div><div class="list"><div class="icon-grid" id="icon-grid">${iconGrid()}</div></div></div>
+    ${existing && existing.name !== 'Sonstiges' ? `<div class="sheet-sec"><div class="list">${cell({ title: 'Kategorie löschen', action: 'delete-cat', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div>
+      ${used ? `<p class="sheet-note">${plural(used, 'Done nutzt', 'Dones nutzen')} diese Kategorie. Beim Löschen werden sie zu „Sonstiges“.</p>` : ''}</div>` : ''}`;
+  openSheet(existing ? 'Kategorie' : 'Neue Kategorie', body, () => saveCategory(existing));
+  if (!existing) focusNoScroll($('#cat-name'));
+}
+const catPreview = () => `<span class="badge" style="--c:${ui.draft.color};width:64px;height:64px;border-radius:15px">${icon(ui.draft.icon, 36, 1.9)}</span>`;
+const iconGrid = () => CAT_ICONS.map(n => `<button type="button" class="icon-pick ${n === ui.draft.icon ? 'on' : ''}" style="--c:${ui.draft.color}" data-action="pick-cat-icon" data-value="${n}">${icon(n, 22, 1.9)}</button>`).join('');
+
+function saveCategory(existing) {
+  const name = $('#cat-name').value.trim();
+  if (!name) { shake($('#cat-name').parentElement); return; }
+  if (data.categories.some(c => c.name.toLowerCase() === name.toLowerCase() && c !== existing)) { toast('Diese Kategorie gibt es schon', false); return; }
+  if (existing) {
+    const old = existing.name;
+    if (old !== name) {
+      data.dones.forEach(d => { if (d.category === old) d.category = name; });
+      data.favorites.forEach(f => { if (f.category === old) f.category = name; });
+    }
+    Object.assign(existing, { name, icon: ui.draft.icon, color: ui.draft.color });
+  } else {
+    data.categories.push({ id: uid(), name, icon: ui.draft.icon, color: ui.draft.color, hidden: false });
+  }
+  save(); closeSheet(); render(); toast('Kategorie gespeichert');
+}
+
+/* =========================================================
+   13. EXPORT & IMPORT
    ========================================================= */
 function exportFromKey() {
   const el = $('#export-range');
   const v = el ? el.value : '30';
   if (v === 'all') return null;
-  const from = new Date();
-  from.setDate(from.getDate() - Number(v) + 1);
+  const from = new Date(); from.setDate(from.getDate() - Number(v) + 1);
   return dateKey(from);
 }
 
@@ -833,6 +1134,7 @@ function buildMarkdown(fromKey) {
   const days = new Set();
   data.dones.forEach(d => days.add(d.date));
   data.checkins.forEach(c => days.add(dateKey(new Date(c.ts))));
+  data.gratitude.forEach(g => days.add(g.date));
   Object.keys(data.reflections).forEach(k => days.add(k));
   const sorted = [...days].filter(k => !fromKey || k >= fromKey).sort();
 
@@ -842,9 +1144,9 @@ function buildMarkdown(fromKey) {
   md += `- Persönliches Wellbeing-Tagebuch einer Person, chronologisch nach Tagen.\n`;
   md += `- **Erledigt**: Done-Liste (was geschafft wurde), mit Kategorie und ggf. zugehörigem Lebensziel.\n`;
   md += `- **Gefühls-Check-ins**: mehrere Momentaufnahmen pro Tag mit Uhrzeit, Stimmung 1–5, gewählten Gefühlen, Auslösern und Notiz.\n`;
-  md += `- **Tagesfazit**: Gesamtbewertung des Tages (Stimmung 1–5), Freitext, Schlafqualität 1–5, Energie 1–5, Dankbarkeit.\n`;
+  md += `- **Dankbar für**: Dankbarkeitstagebuch, beliebig viele Einträge pro Tag.\n`;
+  md += `- **Tagesfazit**: Gesamtbewertung des Tages (Stimmung 1–5), Freitext, Schlafqualität 1–5, Energie 1–5.\n`;
   md += `- Skala: 1 = sehr schlecht, 2 = schlecht, 3 = neutral, 4 = gut, 5 = sehr gut.\n\n`;
-
   if (data.goals.length) {
     md += `## Lebensziele\n\n`;
     data.goals.forEach(g => {
@@ -853,7 +1155,6 @@ function buildMarkdown(fromKey) {
     });
     md += `\n`;
   }
-
   md += `## Tage\n\n`;
   for (const k of sorted) {
     md += `### ${k} (${parseKey(k).toLocaleDateString('de-DE', { weekday: 'long' })})\n\n`;
@@ -875,6 +1176,12 @@ function buildMarkdown(fromKey) {
       });
       md += `\n`;
     }
+    const grats = gratitudeOn(k);
+    if (grats.length) {
+      md += `**Dankbar für:**\n`;
+      grats.forEach(g => { md += `- ${g.text}\n`; });
+      md += `\n`;
+    }
     const r = data.reflections[k];
     if (r) {
       md += `**Tagesfazit:** Gesamtstimmung ${r.mood}/5`;
@@ -882,23 +1189,17 @@ function buildMarkdown(fromKey) {
       if (r.energy) md += `, Energie ${r.energy}/5`;
       md += `\n`;
       if (r.text) md += `> ${r.text.replace(/\n+/g, '\n> ')}\n`;
-      if (r.gratitude && r.gratitude.length) md += `Dankbar für: ${r.gratitude.join('; ')}\n`;
       md += `\n`;
     }
   }
   return md;
 }
 
-// Teilen-Menü des iPhones öffnen (Dateien, AirDrop, KI-App …), sonst Download
 async function shareFile(filename, content, mime) {
   const file = new File([content], filename, { type: mime });
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title: filename });
-      return true;
-    } catch (e) {
-      if (e.name === 'AbortError') return false;
-    }
+    try { await navigator.share({ files: [file], title: filename }); return true; }
+    catch (e) { if (e.name === 'AbortError') return false; }
   }
   const url = URL.createObjectURL(file);
   const a = document.createElement('a');
@@ -910,7 +1211,7 @@ async function shareFile(filename, content, mime) {
 
 async function exportJson() {
   const ok = await shareFile(`wellbeing-backup-${dateKey()}.json`, JSON.stringify(data, null, 2), 'application/json');
-  if (ok) { data.settings.lastBackup = new Date().toISOString(); save(); render(); toast('💾 Backup erstellt'); }
+  if (ok) { data.settings.lastBackup = new Date().toISOString(); save(); render(); toast('Backup erstellt'); }
 }
 
 function importJson(file) {
@@ -919,21 +1220,18 @@ function importJson(file) {
     try {
       const d = JSON.parse(reader.result);
       if (!Array.isArray(d.dones) || !Array.isArray(d.checkins)) throw new Error('Kein Wellbeing-Backup');
-      const n = d.dones.length + d.checkins.length;
-      if (!confirm(`Backup mit ${n} Einträgen einspielen? Die aktuellen Daten auf diesem iPhone werden dabei ersetzt.`)) return;
-      const keepSettings = data.settings; // Face ID-Einstellung dieses Geräts behalten
-      const base = emptyData();
-      data = Object.assign(base, d, { settings: keepSettings });
-      save(); render(); toast('📂 Backup eingespielt');
-    } catch (e) {
-      alert('Die Datei konnte nicht gelesen werden: ' + e.message);
-    }
+      if (!confirm(`Backup mit ${d.dones.length + d.checkins.length} Einträgen einspielen? Die aktuellen Daten auf diesem iPhone werden ersetzt.`)) return;
+      const keep = data.settings;
+      data = normalize(d);
+      data.settings = keep;
+      save(); render(); toast('Backup eingespielt');
+    } catch (e) { alert('Die Datei konnte nicht gelesen werden: ' + e.message); }
   };
   reader.readAsText(file);
 }
 
 /* =========================================================
-   11. FACE ID-SPERRE ("Türsteher" über einen Passkey)
+   14. FACE ID-SPERRE (Passkey als Türsteher)
    ========================================================= */
 let isUnlocked = !data.settings.lockEnabled;
 let unlocking = false;
@@ -942,50 +1240,38 @@ const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
 async function enableLock() {
   if (!window.PublicKeyCredential || !navigator.credentials) {
-    alert('Face ID ist hier nicht verfügbar. Öffne die App über den Home-Bildschirm (https-Adresse).');
-    return;
+    alert('Face ID ist hier nicht verfügbar. Öffne die App über den Home-Bildschirm.');
+    render(); return;
   }
   try {
-    const cred = await navigator.credentials.create({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        rp: { name: 'Wellbeing' },
-        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'Wellbeing', displayName: 'Wellbeing-App' },
-        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
-        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
-        timeout: 60000,
-      },
-    });
+    const cred = await navigator.credentials.create({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { name: 'Wellbeing' },
+      user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'Wellbeing', displayName: 'Wellbeing-App' },
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+      timeout: 60000,
+    } });
     data.settings.credentialId = toB64(cred.rawId);
     data.settings.lockEnabled = true;
     isUnlocked = true;
-    save(); render();
-    toast('🔒 Face ID-Sperre aktiv');
-  } catch (e) {
-    console.error(e);
-    toast('Einrichtung abgebrochen');
-  }
+    save(); render(); toast('Face ID-Sperre aktiv');
+  } catch (e) { console.error(e); render(); toast('Einrichtung abgebrochen', false); }
 }
 
 async function verifyFaceId() {
   try {
-    await navigator.credentials.get({
-      publicKey: {
-        challenge: crypto.getRandomValues(new Uint8Array(32)),
-        allowCredentials: [{ type: 'public-key', id: fromB64(data.settings.credentialId) }],
-        userVerification: 'required',
-        timeout: 60000,
-      },
-    });
+    await navigator.credentials.get({ publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ type: 'public-key', id: fromB64(data.settings.credentialId) }],
+      userVerification: 'required', timeout: 60000,
+    } });
     return true;
-  } catch (e) {
-    console.error(e);
-    return false;
-  }
+  } catch (e) { console.error(e); return false; }
 }
 
-function showLock() { $('#lock').classList.remove('hidden'); }
-function hideLock() { $('#lock').classList.add('hidden'); }
+const showLock = () => $('#lock').classList.remove('hidden');
+const hideLock = () => $('#lock').classList.add('hidden');
 
 async function tryUnlock() {
   if (unlocking) return;
@@ -996,12 +1282,11 @@ async function tryUnlock() {
 }
 
 async function disableLock() {
-  if (!(await verifyFaceId())) { toast('Face ID nicht bestätigt'); return; }
+  if (!(await verifyFaceId())) { render(); toast('Face ID nicht bestätigt', false); return; }
   data.settings.lockEnabled = false;
   data.settings.credentialId = null;
   isUnlocked = true;
-  save(); render();
-  toast('Face ID-Sperre aus');
+  save(); render(); toast('Face ID-Sperre aus');
 }
 
 function withinGrace() {
@@ -1009,20 +1294,17 @@ function withinGrace() {
   return Date.now() - last <= data.settings.graceMinutes * 60000;
 }
 
-// App geht in den Hintergrund → Inhalte verdecken; kommt zurück → ggf. Face ID
 document.addEventListener('visibilitychange', () => {
-  if (!data.settings.lockEnabled) { if (document.visibilityState === 'visible') render(); return; }
+  if (!data.settings.lockEnabled) { if (document.visibilityState === 'visible' && !$('#sheet').classList.contains('open')) render(); return; }
   if (document.visibilityState === 'hidden') {
     if (isUnlocked) localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
     showLock();
-  } else {
-    if (isUnlocked && withinGrace()) { hideLock(); render(); }
-    else { isUnlocked = false; showLock(); tryUnlock(); }
-  }
+  } else if (isUnlocked && withinGrace()) { hideLock(); }
+  else { isUnlocked = false; showLock(); tryUnlock(); }
 });
 
 /* =========================================================
-   12. KLICKS & EINGABEN (alle Buttons laufen hier zusammen)
+   15. KLICKS & EINGABEN
    ========================================================= */
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-action]');
@@ -1030,20 +1312,17 @@ document.addEventListener('click', e => {
   const { action, id, day, value } = el.dataset;
 
   switch (action) {
-    // Navigation
     case 'tab': ui.tab = el.dataset.tab; render(); window.scrollTo(0, 0); break;
     case 'cal-prev': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() - 1, 1); render(); break;
     case 'cal-next': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() + 1, 1); render(); break;
     case 'select-day': ui.calSelected = day; render(); break;
     case 'hide-hint': localStorage.setItem(HINT_KEY, '1'); render(); break;
 
-    // Eingabefenster
-    case 'sheet-cancel': closeSheet(); break;
+    case 'sheet-cancel': if (sheetDismissSaves && sheetSave) sheetSave(); else closeSheet(); break;
     case 'sheet-save': if (sheetSave) sheetSave(); break;
     case 'pick-scale': {
       const v = Number(value), field = el.dataset.field;
-      const alreadyOn = el.classList.contains('on');
-      const newVal = alreadyOn && field !== 'mood' ? null : v; // Schlaf/Energie per erneutem Tap abwählbar
+      const newVal = el.classList.contains('on') && field !== 'mood' ? null : v;
       ui.draft[field] = newVal;
       el.parentElement.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('on', newVal !== null && b === el));
       break;
@@ -1052,25 +1331,40 @@ document.addEventListener('click', e => {
     // Done
     case 'new-done': openDoneSheet(day || dateKey()); break;
     case 'edit-done': { const d = data.dones.find(x => x.id === id); if (d) openDoneSheet(d.date, d); break; }
+    case 'done-add': addDoneFromInput(); break;
     case 'pick-cat': {
-      const deselect = ui.draft.category === value; // erneut antippen = abwählen
+      const deselect = ui.draft.category === value;
       ui.draft.category = deselect ? null : value;
       el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', !deselect && c === el));
       break;
     }
     case 'quick-done': {
-      const dateEl = $('#done-date');
-      data.dones.push({
-        id: uid(), text: el.dataset.text, category: el.dataset.cat, goalId: el.dataset.goal || null,
-        date: (dateEl && dateEl.value) || dateKey(), createdAt: new Date().toISOString(),
-      });
-      save(); closeSheet(); render();
-      toast('✅ ' + truncate(el.dataset.text, 28));
+      addDone(el.dataset.text, el.dataset.cat, el.dataset.goal);
+      el.classList.add('on');
       break;
     }
+    case 'toggle-fav': {
+      const d = data.dones.find(x => x.id === id);
+      if (!d) break;
+      const i = data.favorites.findIndex(f => f.text === d.text);
+      if (i >= 0) data.favorites.splice(i, 1);
+      else data.favorites.push({ id: uid(), text: d.text, category: d.category, goalId: d.goalId });
+      save(); renderAdded();
+      break;
+    }
+    case 'undo-done':
+      data.dones = data.dones.filter(x => x.id !== id);
+      ui.draft.added = ui.draft.added.filter(x => x !== id);
+      save(); renderAdded();
+      break;
     case 'delete-done':
       if (confirm('Dieses Done löschen?')) { data.dones = data.dones.filter(x => x.id !== id); save(); closeSheet(); render(); }
       break;
+
+    // Dankbarkeit
+    case 'new-gratitude': openGratitudeSheet(day || dateKey()); break;
+    case 'grat-add': addGratitudeFromInput(); break;
+    case 'del-grat': data.gratitude = data.gratitude.filter(g => g.id !== id); save(); renderGratList(); break;
 
     // Check-in
     case 'new-checkin': openCheckinSheet(); break;
@@ -1089,7 +1383,7 @@ document.addEventListener('click', e => {
     }
     case 'add-emotion': {
       const input = $('#ci-custom');
-      if (!input.value.trim()) { input.focus(); break; }
+      if (!input.value.trim()) { focusNoScroll(input); break; }
       addCustomEmotion(input.value); input.value = '';
       $('#ci-emotions').innerHTML = emotionChips();
       break;
@@ -1116,56 +1410,75 @@ document.addEventListener('click', e => {
       }
       break;
 
+    // Kategorien
+    case 'new-cat': openCategorySheet(); break;
+    case 'edit-cat': { const c = data.categories.find(x => x.id === id); if (c) openCategorySheet(c); break; }
+    case 'pick-cat-icon':
+      ui.draft.icon = value; $('#icon-grid').innerHTML = iconGrid(); $('#cat-preview').innerHTML = catPreview(); break;
+    case 'pick-cat-color':
+      ui.draft.color = value;
+      el.parentElement.querySelectorAll('.color-pick').forEach(c => c.classList.toggle('on', c === el));
+      $('#icon-grid').innerHTML = iconGrid(); $('#cat-preview').innerHTML = catPreview();
+      break;
+    case 'delete-cat': {
+      const c = data.categories.find(x => x.id === id);
+      if (c && confirm(`Kategorie „${c.name}“ löschen?`)) {
+        data.dones.forEach(d => { if (d.category === c.name) d.category = 'Sonstiges'; });
+        data.favorites.forEach(f => { if (f.category === c.name) f.category = 'Sonstiges'; });
+        data.categories = data.categories.filter(x => x.id !== id);
+        save(); closeSheet(); render();
+      }
+      break;
+    }
+
     // Mehr
     case 'del-fav': data.favorites = data.favorites.filter(f => f.id !== id); save(); render(); break;
-    case 'export-md': {
-      const md = buildMarkdown(exportFromKey());
-      shareFile(`wellbeing-export-${dateKey()}.md`, md, 'text/plain');
+    case 'export-md': shareFile(`wellbeing-export-${dateKey()}.md`, buildMarkdown(exportFromKey()), 'text/plain'); break;
+    case 'copy-md':
+      navigator.clipboard.writeText(buildMarkdown(exportFromKey())).then(() => toast('Kopiert – jetzt in die KI einfügen'), () => toast('Kopieren nicht möglich', false));
       break;
-    }
-    case 'copy-md': {
-      const md = buildMarkdown(exportFromKey());
-      navigator.clipboard.writeText(md).then(() => toast('📋 Kopiert – jetzt in die KI einfügen'), () => toast('Kopieren nicht möglich'));
-      break;
-    }
     case 'export-json': exportJson(); break;
     case 'import-json': $('#import-file').click(); break;
-
-    // Face ID
-    case 'lock-enable': enableLock(); break;
-    case 'lock-disable': disableLock(); break;
     case 'lock-now': isUnlocked = false; localStorage.removeItem(LAST_ACTIVE_KEY); showLock(); break;
     case 'unlock': tryUnlock(); break;
   }
 });
 
-// Return-Taste in Textfeldern
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Enter') return;
-  if (e.target.id === 'done-text') { e.preventDefault(); if (sheetSave) sheetSave(); }
-  if (e.target.id === 'ci-custom') { e.preventDefault(); $('[data-action="add-emotion"]').click(); }
-  if (e.target.id === 'g-title') { e.preventDefault(); $('#g-desc').focus(); }
+  if (e.key !== 'Enter' || e.isComposing) return;
+  const idMap = { 'done-text': () => (ui.draft.added ? addDoneFromInput() : sheetSave && sheetSave()),
+    'grat-text': addGratitudeFromInput,
+    'ci-custom': () => $('[data-action="add-emotion"]').click(),
+    'g-title': () => focusNoScroll($('#g-desc')),
+    'cat-name': () => $('#cat-name').blur() };
+  if (idMap[e.target.id]) { e.preventDefault(); idMap[e.target.id](); }
 });
 
 document.addEventListener('change', e => {
-  if (e.target.dataset.change === 'grace') { data.settings.graceMinutes = Number(e.target.value); save(); }
-  if (e.target.id === 'import-file' && e.target.files[0]) { importJson(e.target.files[0]); e.target.value = ''; }
+  const t = e.target;
+  if (t.dataset.change === 'grace') { data.settings.graceMinutes = Number(t.value); save(); }
+  if (t.dataset.change === 'lock') { if (t.checked) enableLock(); else disableLock(); }
+  if (t.dataset.change === 'cat-visible') {
+    const c = data.categories.find(x => x.id === t.dataset.id);
+    if (c) { c.hidden = !t.checked; save(); render(); }
+  }
+  if (t.id === 'import-file' && t.files[0]) { importJson(t.files[0]); t.value = ''; }
 });
 
 /* =========================================================
-   13. START
+   16. START
    ========================================================= */
 function init() {
-  // Browser bitten, die Daten nicht automatisch zu löschen
   if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-  // Offline-Fähigkeit (Service Worker), nur über https
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
-
+  renderChrome();
   if (data.settings.lockEnabled) {
-    if (withinGrace()) { isUnlocked = true; }
+    if (withinGrace()) isUnlocked = true;
     else { isUnlocked = false; showLock(); tryUnlock(); }
   }
   render();
+  // Großer Titel → kleine Kopfzeile beim Scrollen
+  new IntersectionObserver(([en]) => $('#navbar').classList.toggle('show', !en.isIntersecting), { rootMargin: '-40px 0px 0px 0px' }).observe($('#title'));
 }
 init();
 </script>
