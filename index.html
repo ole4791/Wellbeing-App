@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Wellbeing">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<title>Wellbeing</title>
+<style>
+/* =========================================================
+   1. FARBEN & GRUNDLAYOUT (hell + dunkel, iOS-Stil)
+   ========================================================= */
+:root {
+  --bg: #f2f2f7; --card: #ffffff; --text: #000000; --muted: #6e6e73;
+  --sep: rgba(60,60,67,.16); --chip: #e5e5ea; --accent: #30a46c;
+  --pink: #e93d82; --danger: #e5484d; --bar: rgba(249,249,251,.88);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #000000; --card: #1c1c1e; --text: #ffffff; --muted: #98989f;
+    --sep: rgba(84,84,88,.55); --chip: #2c2c2e; --bar: rgba(22,22,24,.88);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  font-size: 17px; line-height: 1.35;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+  padding-top: env(safe-area-inset-top);
+}
+html.noscroll, html.noscroll body { overflow: hidden; }
+button { font: inherit; color: inherit; cursor: pointer; }
+main { padding: 0 16px calc(150px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+h1 { font-size: 34px; font-weight: 700; margin: 12px 0 0; letter-spacing: -.5px; }
+.subtitle { color: var(--muted); margin: 2px 0 8px; font-size: 15px; }
+.muted { color: var(--muted); font-weight: 400; }
+small { font-size: 13px; }
+
+/* =========================================================
+   2. KARTEN, LISTEN, ABSCHNITTE
+   ========================================================= */
+.section { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px;
+  color: var(--muted); margin: 22px 4px 8px; display: flex; gap: 6px; align-items: center; }
+.count { background: var(--chip); border-radius: 999px; padding: 0 7px; font-size: 12px; }
+.card { background: var(--card); border-radius: 12px; overflow: hidden; }
+.card.pad { padding: 14px; }
+.row { display: flex; gap: 12px; align-items: center; width: 100%; padding: 11px 14px;
+  background: none; border: 0; border-bottom: 1px solid var(--sep); text-align: left; }
+.row:last-child { border-bottom: 0; }
+.row:active { background: var(--chip); }
+.row.static:active { background: none; }
+.row-icon { font-size: 22px; width: 28px; text-align: center; flex-shrink: 0; }
+.row-main { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.row-main small { color: var(--muted); }
+.chev { color: var(--muted); font-size: 22px; }
+.empty { padding: 14px; color: var(--muted); font-size: 15px; }
+.cta { width: 100%; border: 0; padding: 16px; font-weight: 600; color: var(--accent); text-align: center; }
+.reflection { width: 100%; border: 0; text-align: left; padding: 14px; }
+.reflection p { margin: 8px 0 0; }
+.refl-head { display: flex; gap: 12px; align-items: center; }
+.refl-head small { display: block; color: var(--muted); }
+.big-emoji { font-size: 34px; }
+.hint { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-top: 12px;
+  font-size: 15px; display: flex; gap: 10px; align-items: flex-start; }
+.hint button.x { background: none; border: 0; color: var(--muted); font-size: 20px; padding: 0 4px; margin-left: auto; }
+.hint .link { background: none; border: 0; color: var(--accent); font-weight: 600; padding: 0; }
+
+/* =========================================================
+   3. BUTTONS, CHIPS, EINGABEFELDER
+   ========================================================= */
+.btn { border: 0; border-radius: 12px; padding: 13px 16px; background: var(--accent); color: #fff; font-weight: 600; }
+.btn.secondary { background: var(--card); color: var(--accent); }
+.btn.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+.btn.small { padding: 8px 12px; font-size: 15px; }
+.btn.full { width: 100%; margin-top: 10px; display: block; }
+.btn:active { opacity: .7; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { border: 0; border-radius: 999px; padding: 8px 13px; background: var(--chip); font-size: 15px; }
+.chip.on { background: var(--c, var(--accent)); color: #fff; }
+.chip.quick { background: var(--card); border: 1px solid var(--sep); }
+.chip.quick:active { background: var(--accent); color: #fff; }
+.input { width: 100%; font: inherit; font-size: 16px; padding: 12px; margin: 4px 0;
+  border-radius: 10px; border: 1px solid var(--sep); background: var(--card); color: var(--text); min-height: 46px; }
+textarea.input { resize: vertical; }
+.label { font-size: 13px; font-weight: 600; color: var(--muted); margin: 18px 2px 8px; }
+.add-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+.add-row .input { margin: 0; }
+.check { display: flex; gap: 10px; align-items: center; margin-top: 18px; font-size: 15px; }
+.check input { width: 22px; height: 22px; }
+.moods, .scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.scale-btn { border: 0; border-radius: 12px; background: var(--chip); padding: 9px 0; font-size: 17px; }
+.scale-btn .emo { display: block; font-size: 30px; line-height: 1.1; }
+.scale-btn small { color: var(--muted); }
+.scale-btn.on { background: var(--c, var(--accent)); color: #fff; }
+.scale-btn.on small { color: #fff; }
+.group { margin-bottom: 12px; }
+.group-name { font-size: 13px; font-weight: 700; margin: 0 2px 6px; }
+.setting { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 6px 0; }
+.setting + .setting { border-top: 1px solid var(--sep); padding-top: 12px; margin-top: 6px; }
+.setting small { display: block; color: var(--muted); }
+.setting select { font-size: 16px; padding: 6px; border-radius: 8px; border: 1px solid var(--sep); background: var(--card); color: var(--text); }
+.steps { margin: 8px 0 0; padding-left: 20px; font-size: 15px; }
+.steps li { margin-bottom: 4px; }
+.shake { animation: shake .35s; }
+@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+/* =========================================================
+   4. SCHNELLEINTRAG-LEISTE & TAB-LEISTE (unten, daumenfreundlich)
+   ========================================================= */
+.quickbar { position: fixed; left: 0; right: 0; bottom: calc(54px + env(safe-area-inset-bottom));
+  display: flex; gap: 12px; padding: 10px 16px; background: var(--bar);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); z-index: 20; }
+.qbtn { flex: 1; height: 52px; border: 0; border-radius: 14px; color: #fff; font-size: 18px; font-weight: 600; }
+.qbtn.done { background: var(--accent); }
+.qbtn.feel { background: var(--pink); }
+.qbtn:active { transform: scale(.97); }
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr);
+  padding-bottom: env(safe-area-inset-bottom); background: var(--bar); border-top: 1px solid var(--sep);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px); z-index: 20; }
+.tabbar button { background: none; border: 0; height: 54px; font-size: 11px; color: var(--muted);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+.tabbar button span { font-size: 22px; filter: grayscale(1); opacity: .6; }
+.tabbar button.active { color: var(--accent); font-weight: 600; }
+.tabbar button.active span { filter: none; opacity: 1; }
+
+/* =========================================================
+   5. EINGABE-FENSTER ("Sheet", fährt von unten hoch)
+   ========================================================= */
+.backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 40; }
+.backdrop.open { opacity: 1; pointer-events: auto; }
+.sheet { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 10px); bottom: 0;
+  max-width: 640px; margin: 0 auto; background: var(--bg); border-radius: 16px 16px 0 0;
+  transform: translateY(105%); transition: transform .28s cubic-bezier(.2,.8,.2,1); z-index: 50;
+  display: flex; flex-direction: column; box-shadow: 0 -4px 30px rgba(0,0,0,.15); }
+.sheet.open { transform: none; }
+.sheet-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--sep); }
+.sheet-head h2 { margin: 0; font-size: 17px; text-align: center; }
+.sheet-head button { background: none; border: 0; color: var(--accent); padding: 6px 2px; }
+.sheet-head #sheet-save { justify-self: end; font-weight: 700; }
+.sheet-head #sheet-cancel { justify-self: start; }
+.sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
+  padding: 12px 16px calc(40px + env(safe-area-inset-bottom)); flex: 1; }
+.summary { margin-bottom: 4px; font-size: 15px; }
+.curve { display: flex; align-items: flex-end; gap: 6px; height: 80px; margin: 12px 0 8px; }
+.curve span { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 3px; }
+.curve b { width: 100%; max-width: 24px; border-radius: 5px; }
+.curve small { font-size: 10px; color: var(--muted); }
+
+/* =========================================================
+   6. KALENDER
+   ========================================================= */
+.cal-nav { display: flex; justify-content: space-between; align-items: center; margin: 12px 0; }
+.cal-nav button { background: var(--card); border: 0; border-radius: 10px; width: 44px; height: 40px; font-size: 22px; color: var(--accent); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+.cal-wd { text-align: center; font-size: 12px; color: var(--muted); font-weight: 600; padding-bottom: 2px; }
+.cal-cell { aspect-ratio: 1; border: 0; border-radius: 10px; background: var(--card);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0; font-size: 15px; }
+.cal-cell.blank { background: transparent; }
+.cal-cell.has-mood { background: var(--mood); color: #fff; }
+.cal-cell.today .num { font-weight: 800; text-decoration: underline; }
+.cal-cell.selected { outline: 2.5px solid var(--text); outline-offset: -2.5px; }
+.cal-cell .dots { font-size: 9px; line-height: 1; height: 9px; letter-spacing: -1px; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin: 10px 2px; }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 3px; vertical-align: -1px; }
+
+/* =========================================================
+   7. SPERRBILDSCHIRM & HINWEIS-TOAST
+   ========================================================= */
+.lock { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; }
+.lock.hidden { display: none; }
+.lock-icon { font-size: 64px; }
+.lock h2 { margin: 8px 0 4px; font-size: 28px; }
+.lock p { color: var(--muted); margin: 0 0 24px; }
+.toast { position: fixed; left: 50%; top: calc(env(safe-area-inset-top) + 12px); transform: translate(-50%, -20px);
+  background: var(--text); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-size: 15px; font-weight: 600;
+  opacity: 0; transition: all .25s; z-index: 200; pointer-events: none; white-space: nowrap; }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+
+<!-- Sperrbildschirm (wird per JavaScript ein- und ausgeblendet) -->
+<div id="lock" class="lock hidden">
+  <div>
+    <div class="lock-icon">🔒</div>
+    <h2>Wellbeing</h2>
+    <p>Nur für dich.</p>
+    <button class="btn" data-action="unlock">Mit Face ID entsperren</button>
+  </div>
+</div>
+
+<main>
+  <h1 id="title">Heute</h1>
+  <section id="view"></section>
+</main>
+
+<!-- Schnelleintrag: immer sichtbar -->
+<div class="quickbar">
+  <button class="qbtn done" data-action="new-done">＋ Done</button>
+  <button class="qbtn feel" data-action="new-checkin">＋ Gefühl</button>
+</div>
+
+<nav class="tabbar">
+  <button data-action="tab" data-tab="today"><span>☀️</span>Heute</button>
+  <button data-action="tab" data-tab="calendar"><span>📅</span>Kalender</button>
+  <button data-action="tab" data-tab="goals"><span>🎯</span>Ziele</button>
+  <button data-action="tab" data-tab="more"><span>⚙️</span>Mehr</button>
+</nav>
+
+<div id="backdrop" class="backdrop" data-action="sheet-cancel"></div>
+<div id="sheet" class="sheet" aria-hidden="true">
+  <div class="sheet-head">
+    <button id="sheet-cancel" data-action="sheet-cancel">Abbrechen</button>
+    <h2 id="sheet-title"></h2>
+    <button id="sheet-save" data-action="sheet-save">Sichern</button>
+  </div>
+  <div id="sheet-body" class="sheet-body"></div>
+</div>
+
+<input type="file" id="import-file" accept=".json,application/json" hidden>
+<div id="toast" class="toast"></div>
+
+<script>
+'use strict';
+
+/* =========================================================
+   1. FESTE LISTEN (Kategorien, Gefühle, Skalen)
+   ========================================================= */
+const STORAGE_KEY = 'wellbeing-data-v1';
+const LAST_ACTIVE_KEY = 'wellbeing-last-active';
+const HINT_KEY = 'wellbeing-hide-install-hint';
+
+const CATEGORIES = [
+  { name: 'Arbeit', icon: '💼' },
+  { name: 'Sport', icon: '🏃' },
+  { name: 'Soziales', icon: '👥' },
+  { name: 'Haushalt', icon: '🏠' },
+  { name: 'Lernen', icon: '📚' },
+  { name: 'Selbstfürsorge', icon: '🌿' },
+  { name: 'Kreatives', icon: '🎨' },
+  { name: 'Sonstiges', icon: '✅' },
+];
+
+const EMOTION_GROUPS = [
+  { name: 'Freude', color: '#c99400', items: ['glücklich', 'dankbar', 'stolz', 'zufrieden', 'begeistert', 'erleichtert', 'verbunden'] },
+  { name: 'Ruhe', color: '#12a594', items: ['entspannt', 'gelassen', 'geborgen', 'ausgeglichen', 'hoffnungsvoll'] },
+  { name: 'Kraft', color: '#f76b15', items: ['motiviert', 'selbstbewusst', 'energiegeladen', 'mutig', 'fokussiert', 'neugierig'] },
+  { name: 'Traurigkeit', color: '#3e63dd', items: ['traurig', 'einsam', 'enttäuscht', 'niedergeschlagen', 'wehmütig'] },
+  { name: 'Angst', color: '#8e4ec6', items: ['ängstlich', 'besorgt', 'gestresst', 'überfordert', 'unsicher', 'nervös'] },
+  { name: 'Wut', color: '#e5484d', items: ['wütend', 'gereizt', 'frustriert', 'genervt', 'eifersüchtig'] },
+  { name: 'Scham / Schuld', color: '#a18072', items: ['beschämt', 'schuldig', 'peinlich berührt'] },
+  { name: 'Sonstiges', color: '#8e8e93', items: ['erschöpft', 'gelangweilt', 'gleichgültig', 'verwirrt', 'überrascht'] },
+];
+
+const TRIGGERS = ['Arbeit', 'Partner*in', 'Familie', 'Freunde', 'Schlaf', 'Gesundheit', 'Sport', 'Wetter', 'Alleinsein', 'Medien'];
+
+const MOODS = [
+  { v: 1, emoji: '😣', label: 'sehr schlecht' },
+  { v: 2, emoji: '🙁', label: 'schlecht' },
+  { v: 3, emoji: '😐', label: 'neutral' },
+  { v: 4, emoji: '🙂', label: 'gut' },
+  { v: 5, emoji: '😄', label: 'sehr gut' },
+];
+const MOOD_COLORS = { 1: '#e5484d', 2: '#f76b15', 3: '#d9a400', 4: '#7cb342', 5: '#30a46c' };
+
+const LIFE_AREAS = ['Gesundheit', 'Beziehungen', 'Karriere', 'Persönliches', 'Finanzen', 'Freizeit'];
+const GOAL_STATUS = { active: 'Aktiv', done: 'Erreicht', paused: 'Pausiert' };
+
+/* =========================================================
+   2. DATEN LADEN & SPEICHERN (bleiben nur auf diesem Gerät)
+   ========================================================= */
+function emptyData() {
+  return {
+    version: 1,
+    dones: [],        // { id, text, category, date:'JJJJ-MM-TT', goalId, createdAt }
+    checkins: [],     // { id, ts (Zeitpunkt), mood 1–5, emotions[], triggers[], note }
+    reflections: {},  // 'JJJJ-MM-TT' → { mood, text, sleep, energy, gratitude[] }
+    goals: [],        // { id, title, description, area, status, createdAt }
+    favorites: [],    // { id, text, category, goalId }
+    customEmotions: [],
+    settings: { lockEnabled: false, credentialId: null, graceMinutes: 5, lastBackup: null },
+  };
+}
+
+function loadData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return emptyData();
+  try {
+    const d = JSON.parse(raw);
+    const base = emptyData();
+    return Object.assign(base, d, { settings: Object.assign(base.settings, d.settings || {}) });
+  } catch (e) {
+    // Sicherheitsnetz: kaputte Daten nicht überschreiben, sondern beiseitelegen
+    localStorage.setItem(STORAGE_KEY + '-defekt-' + Date.now(), raw);
+    return emptyData();
+  }
+}
+
+let data = loadData();
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (e) {
+    toast('⚠️ Speichern fehlgeschlagen');
+  }
+}
+
+/* =========================================================
+   3. KLEINE HELFER
+   ========================================================= */
+const $ = sel => document.querySelector(sel);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const pad = n => String(n).padStart(2, '0');
+const dateKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const parseKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const fmtTime = iso => { const d = new Date(iso); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtDayLong = k => parseKey(k).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long' });
+const fmtDayShort = k => parseKey(k).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+const truncate = (s, n) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const catIcon = name => (CATEGORIES.find(c => c.name === name) || { icon: '✅' }).icon;
+const emotionColor = e => (EMOTION_GROUPS.find(g => g.items.includes(e)) || { color: '#8e8e93' }).color;
+const goalTitle = id => (data.goals.find(g => g.id === id) || { title: '(gelöschtes Ziel)' }).title;
+const daysSince = iso => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+
+function donesOn(k) {
+  return data.dones.filter(d => d.date === k).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+function checkinsOn(k) {
+  return data.checkins.filter(c => dateKey(new Date(c.ts)) === k).sort((a, b) => a.ts.localeCompare(b.ts));
+}
+// Tagesstimmung: Tagesfazit, sonst Durchschnitt der Check-ins
+function dayMood(k) {
+  const r = data.reflections[k];
+  if (r && r.mood) return r.mood;
+  const cs = checkinsOn(k);
+  if (!cs.length) return null;
+  return Math.round(cs.reduce((s, c) => s + c.mood, 0) / cs.length);
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+function shake(el) {
+  if (!el) return;
+  el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake');
+}
+
+/* =========================================================
+   4. ANSICHTEN (Heute, Kalender, Ziele, Mehr)
+   ========================================================= */
+const ui = {
+  tab: 'today',
+  calMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
+  calSelected: dateKey(),
+  draft: {},   // Zwischenspeicher für das gerade offene Eingabefenster
+};
+
+function render() {
+  const titles = { today: 'Heute', calendar: 'Kalender', goals: 'Lebensziele', more: 'Mehr' };
+  const views = { today: renderToday, calendar: renderCalendar, goals: renderGoals, more: renderMore };
+  $('#title').textContent = titles[ui.tab];
+  $('#view').innerHTML = views[ui.tab]();
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === ui.tab));
+}
+
+// --- Heute ---
+function renderToday() {
+  const k = dateKey();
+  let html = `<p class="subtitle">${esc(fmtDayLong(k))}</p>`;
+
+  const standalone = window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+  if (!standalone && !localStorage.getItem(HINT_KEY)) {
+    html += `<div class="hint"><span>📲</span><span><strong>Tipp:</strong> In Safari auf <em>Teilen → Zum Home-Bildschirm</em> tippen. Dann läuft Wellbeing wie eine App. Achtung: Die Daten im Safari-Tab und in der Home-Bildschirm-App sind getrennt, also nur dort eintragen.</span><button class="x" data-action="hide-hint">×</button></div>`;
+  }
+
+  const entries = data.dones.length + data.checkins.length;
+  const lb = data.settings.lastBackup;
+  if (entries >= 10 && (!lb || daysSince(lb) >= 14)) {
+    html += `<div class="hint"><span>💾</span><span>${lb ? `Letztes Backup vor ${daysSince(lb)} Tagen.` : 'Noch kein Backup gemacht.'} <button class="link" data-action="export-json">Jetzt sichern</button></span></div>`;
+  }
+
+  return html + renderDay(k);
+}
+
+// Ein Tag: Dones, Check-ins, Tagesfazit (wird in "Heute" und im Kalender benutzt)
+function renderDay(k) {
+  const dones = donesOn(k);
+  const cis = checkinsOn(k);
+  const r = data.reflections[k];
+  let html = '';
+
+  html += `<h3 class="section">Erledigt <span class="count">${dones.length}</span></h3><div class="card">`;
+  html += dones.length
+    ? dones.map(d => `
+      <button class="row" data-action="edit-done" data-id="${d.id}">
+        <span class="row-icon">${catIcon(d.category)}</span>
+        <span class="row-main"><span>${esc(d.text)}</span>
+          <small>${esc(d.category)}${d.goalId ? ' · 🎯 ' + esc(goalTitle(d.goalId)) : ''}</small></span>
+      </button>`).join('')
+    : `<div class="empty">Noch nichts eingetragen – was hast du geschafft?</div>`;
+  html += `</div>`;
+
+  html += `<h3 class="section">Gefühle <span class="count">${cis.length}</span></h3><div class="card">`;
+  html += cis.length
+    ? cis.map(c => `
+      <button class="row" data-action="edit-checkin" data-id="${c.id}">
+        <span class="row-icon">${MOODS[c.mood - 1].emoji}</span>
+        <span class="row-main"><span>${c.emotions.length ? c.emotions.map(esc).join(', ') : 'Stimmung ' + c.mood + '/5'}</span>
+          <small>${fmtTime(c.ts)} Uhr${c.triggers.length ? ' · ' + c.triggers.map(esc).join(', ') : ''}${c.note ? ' · ' + esc(truncate(c.note, 40)) : ''}</small></span>
+      </button>`).join('')
+    : `<div class="empty">Noch kein Check-in. Wie fühlst du dich gerade?</div>`;
+  html += `</div>`;
+
+  html += `<h3 class="section">Tagesfazit</h3>`;
+  if (r) {
+    const extras = [r.sleep ? `Schlaf ${r.sleep}/5` : '', r.energy ? `Energie ${r.energy}/5` : ''].filter(Boolean).join(' · ');
+    html += `
+      <button class="card reflection" data-action="open-reflection" data-day="${k}">
+        <div class="refl-head"><span class="big-emoji">${MOODS[r.mood - 1].emoji}</span>
+          <div><strong>Gesamtstimmung ${r.mood}/5</strong>${extras ? `<small>${extras}</small>` : ''}</div></div>
+        ${r.text ? `<p>${esc(r.text)}</p>` : ''}
+        ${r.gratitude && r.gratitude.length ? `<p class="muted">🙏 ${r.gratitude.map(esc).join(' · ')}</p>` : ''}
+      </button>`;
+  } else {
+    html += `<button class="card cta" data-action="open-reflection" data-day="${k}">🌙 Tagesfazit ziehen</button>`;
+  }
+  return html;
+}
+
+// --- Kalender ---
+function renderCalendar() {
+  const m = ui.calMonth;
+  const year = m.getFullYear(), month = m.getMonth();
+  const startOffset = (new Date(year, month, 1).getDay() + 6) % 7; // Woche beginnt Montag
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayK = dateKey();
+
+  let cells = '';
+  for (let i = 0; i < startOffset; i++) cells += `<div class="cal-cell blank"></div>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const k = `${year}-${pad(month + 1)}-${pad(d)}`;
+    const mood = dayMood(k);
+    const n = donesOn(k).length;
+    const cls = ['cal-cell', mood ? 'has-mood' : '', k === todayK ? 'today' : '', k === ui.calSelected ? 'selected' : ''].join(' ');
+    cells += `<button class="${cls}" data-action="select-day" data-day="${k}" ${mood ? `style="--mood:${MOOD_COLORS[mood]}"` : ''}>
+      <span class="num">${d}</span><span class="dots">${'●'.repeat(Math.min(n, 4))}${n > 4 ? '+' : ''}</span></button>`;
+  }
+  const label = m.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+
+  return `
+    <div class="cal-nav"><button data-action="cal-prev">‹</button><strong>${label}</strong><button data-action="cal-next">›</button></div>
+    <div class="cal-grid">${['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map(w => `<div class="cal-wd">${w}</div>`).join('')}${cells}</div>
+    <div class="legend">${MOODS.map(x => `<span><i style="background:${MOOD_COLORS[x.v]}"></i>${x.emoji}</span>`).join('')}<span>● = Dones</span></div>
+    <h3 class="section" style="text-transform:none;font-size:17px;color:var(--text)">${esc(fmtDayLong(ui.calSelected))}</h3>
+    <button class="btn secondary full" data-action="new-done" data-day="${ui.calSelected}">＋ Done für diesen Tag nachtragen</button>
+    ${renderDay(ui.calSelected)}`;
+}
+
+// --- Lebensziele ---
+function renderGoals() {
+  let html = `<button class="btn secondary full" data-action="new-goal">＋ Neues Lebensziel</button>`;
+  if (!data.goals.length) {
+    return html + `<div class="card empty" style="margin-top:14px">Noch keine Ziele. Was möchtest du in deinem Leben erreichen? Dones kannst du später einem Ziel zuordnen.</div>`;
+  }
+  for (const [status, label] of Object.entries(GOAL_STATUS)) {
+    const gs = data.goals.filter(g => g.status === status);
+    if (!gs.length) continue;
+    html += `<h3 class="section">${label} <span class="count">${gs.length}</span></h3><div class="card">`;
+    html += gs.map(g => {
+      const n = data.dones.filter(d => d.goalId === g.id).length;
+      return `<button class="row" data-action="open-goal" data-id="${g.id}">
+        <span class="row-icon">🎯</span>
+        <span class="row-main"><span>${esc(g.title)}</span><small>${esc(g.area)} · ${n} Done${n === 1 ? '' : 's'}</small></span>
+        <span class="chev">›</span></button>`;
+    }).join('');
+    html += `</div>`;
+  }
+  return html;
+}
+
+// --- Mehr (Einstellungen, Export, Erinnerungen) ---
+function renderMore() {
+  const s = data.settings;
+  const graceOpts = [0, 1, 5, 15, 30].map(v => `<option value="${v}" ${v === s.graceMinutes ? 'selected' : ''}>${v === 0 ? 'sofort' : v + ' Min.'}</option>`).join('');
+  const favs = data.favorites.length
+    ? data.favorites.map(f => `<div class="row static"><span class="row-icon">${catIcon(f.category)}</span><span class="row-main"><span>${esc(f.text)}</span><small>${esc(f.category)}</small></span><button class="btn small danger" data-action="del-fav" data-id="${f.id}">Entfernen</button></div>`).join('')
+    : `<div class="empty">Noch keine Favoriten. Beim Eintragen eines Dones „Als Favorit merken“ anhaken.</div>`;
+
+  return `
+    <h3 class="section">Zugriffsschutz</h3>
+    <div class="card pad">
+      <div class="setting">
+        <div><strong>Face ID-Sperre</strong><small>${s.lockEnabled ? 'Aktiv' : 'Aus'}</small></div>
+        ${s.lockEnabled
+          ? `<button class="btn small danger" data-action="lock-disable">Ausschalten</button>`
+          : `<button class="btn small" data-action="lock-enable">Einrichten</button>`}
+      </div>
+      <div class="setting">
+        <div><strong>Kulanzzeit</strong><small>Keine erneute Abfrage, wenn die App nur kurz weg war</small></div>
+        <select data-change="grace">${graceOpts}</select>
+      </div>
+      ${s.lockEnabled ? `<button class="btn secondary full" data-action="lock-now">🔒 Jetzt sperren</button>` : ''}
+    </div>
+
+    <h3 class="section">Erinnerungen</h3>
+    <div class="card pad">
+      <div style="font-size:15px">Web-Apps können auf dem iPhone keine Erinnerungen planen. So richtest du sie in einer Minute mit der <strong>Erinnerungen-App</strong> ein:</div>
+      <ol class="steps">
+        <li>Erinnerungen-App öffnen → neue Erinnerung, z. B. <em>„💗 Wie fühlst du dich gerade?“</em></li>
+        <li>Datum &amp; Uhrzeit aktivieren, Uhrzeit wählen (z. B. 11:00)</li>
+        <li><em>Wiederholen → Täglich</em></li>
+        <li>Für weitere Check-ins wiederholen (z. B. 15:00, 18:00) und eine abends: <em>„🌙 Tagesfazit“</em></li>
+      </ol>
+    </div>
+
+    <h3 class="section">Export &amp; Backup</h3>
+    <div class="card pad">
+      <div class="setting">
+        <div><strong>Zeitraum</strong><small>für den KI-Export</small></div>
+        <select id="export-range">
+          <option value="7">7 Tage</option><option value="30" selected>30 Tage</option>
+          <option value="90">90 Tage</option><option value="365">1 Jahr</option><option value="all">Alles</option>
+        </select>
+      </div>
+      <button class="btn full" data-action="export-md">📝 Für KI exportieren (Markdown)</button>
+      <button class="btn secondary full" data-action="copy-md">📋 Als Text kopieren (zum Einfügen in eine KI)</button>
+      <button class="btn secondary full" data-action="export-json">💾 Backup speichern (JSON)</button>
+      <button class="btn secondary full" data-action="import-json">📂 Backup einspielen</button>
+      <p class="muted" style="font-size:13px;margin:10px 0 0">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone. Wenn du die App vom Home-Bildschirm löschst, sind sie weg, deshalb regelmäßig sichern (z. B. in iCloud Drive).</p>
+    </div>
+
+    <h3 class="section">Schnellwahl-Favoriten</h3>
+    <div class="card">${favs}</div>
+
+    <h3 class="section">Über</h3>
+    <div class="card pad"><small class="muted">Wellbeing v1.0 · ${data.dones.length} Dones · ${data.checkins.length} Check-ins · ${Object.keys(data.reflections).length} Tagesfazits · ${data.goals.length} Ziele</small></div>`;
+}
+
+/* =========================================================
+   5. EINGABEFENSTER (Sheet) – allgemeine Steuerung
+   ========================================================= */
+let sheetSave = null;
+
+function openSheet(title, body, onSave, saveLabel = 'Sichern') {
+  $('#sheet-title').textContent = title;
+  $('#sheet-body').innerHTML = body;
+  $('#sheet-body').scrollTop = 0;
+  const btn = $('#sheet-save');
+  btn.textContent = saveLabel;
+  btn.style.visibility = onSave ? 'visible' : 'hidden';
+  sheetSave = onSave;
+  $('#sheet').classList.add('open');
+  $('#sheet').setAttribute('aria-hidden', 'false');
+  $('#backdrop').classList.add('open');
+  document.documentElement.classList.add('noscroll');
+}
+
+function closeSheet() {
+  if (document.activeElement) document.activeElement.blur();
+  $('#sheet').classList.remove('open');
+  $('#sheet').setAttribute('aria-hidden', 'true');
+  $('#backdrop').classList.remove('open');
+  document.documentElement.classList.remove('noscroll');
+  sheetSave = null;
+}
+
+function chip(label, on, attrs) {
+  return `<button type="button" class="chip ${on ? 'on' : ''}" ${attrs}>${esc(label)}</button>`;
+}
+
+// 1–5-Knöpfe (mit Emoji für Stimmung, als Zahl für Schlaf/Energie)
+function scaleButtons(field, current, withEmoji = false) {
+  return [1, 2, 3, 4, 5].map(v => `
+    <button type="button" class="scale-btn ${current === v ? 'on' : ''}" data-action="pick-scale" data-field="${field}" data-value="${v}"
+      ${withEmoji ? `style="--c:${MOOD_COLORS[v]}"` : ''}>
+      ${withEmoji ? `<span class="emo">${MOODS[v - 1].emoji}</span><small>${v}</small>` : v}
+    </button>`).join('');
+}
+
+/* =========================================================
+   6. DONE EINTRAGEN
+   ========================================================= */
+// Schnellwahl: Favoriten + zuletzt benutzte Dones → 1 Tap speichert
+function quickPicks() {
+  const seen = new Set();
+  const items = [];
+  for (const f of data.favorites) {
+    if (!seen.has(f.text)) { seen.add(f.text); items.push({ ...f, fav: true }); }
+  }
+  const recent = [...data.dones].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  for (const d of recent) {
+    if (items.length >= 10) break;
+    if (!seen.has(d.text)) { seen.add(d.text); items.push({ text: d.text, category: d.category, goalId: d.goalId || '' }); }
+  }
+  return items.map(it => `
+    <button type="button" class="chip quick" data-action="quick-done" data-text="${esc(it.text)}" data-cat="${esc(it.category)}" data-goal="${esc(it.goalId || '')}">
+      ${it.fav ? '⭐ ' : ''}${catIcon(it.category)} ${esc(it.text)}</button>`).join('');
+}
+
+function openDoneSheet(day, existing = null) {
+  const d = existing || { text: '', category: null, date: day || dateKey(), goalId: null };
+  ui.draft = { category: d.category };
+  const quick = existing ? '' : quickPicks();
+  const goals = data.goals.filter(g => g.status === 'active' || g.id === d.goalId);
+
+  const body = `
+    <input id="done-text" class="input" type="text" placeholder="Was hast du geschafft?" value="${esc(d.text)}" enterkeyhint="done" autocomplete="off">
+    ${quick ? `<div class="label">Schnellwahl – antippen speichert sofort</div><div class="chips">${quick}</div>` : ''}
+    <div class="label">Kategorie <span class="muted">(ohne Auswahl: Sonstiges)</span></div>
+    <div class="chips">${CATEGORIES.map(c => chip(c.icon + ' ' + c.name, c.name === d.category, `data-action="pick-cat" data-value="${esc(c.name)}"`)).join('')}</div>
+    ${goals.length ? `
+      <div class="label">Zahlt ein auf Lebensziel (optional)</div>
+      <select id="done-goal" class="input"><option value="">– kein Ziel –</option>
+        ${goals.map(g => `<option value="${g.id}" ${g.id === d.goalId ? 'selected' : ''}>${esc(g.title)}</option>`).join('')}
+      </select>` : ''}
+    <div class="label">Datum</div>
+    <input id="done-date" class="input" type="date" value="${d.date}">
+    ${existing
+      ? `<button class="btn danger full" style="margin-top:24px" data-action="delete-done" data-id="${existing.id}">Done löschen</button>`
+      : `<label class="check"><input type="checkbox" id="done-fav"> ⭐ Als Favorit für die Schnellwahl merken</label>`}`;
+
+  openSheet(existing ? 'Done bearbeiten' : 'Neues Done', body, () => saveDone(existing));
+  // Tastatur sofort öffnen (funktioniert auf dem iPhone nur direkt nach einem Tap)
+  if (!existing) $('#done-text').focus();
+}
+
+function saveDone(existing) {
+  const text = $('#done-text').value.trim();
+  if (!text) { shake($('#done-text')); $('#done-text').focus(); return; }
+  const date = $('#done-date').value || dateKey();
+  const goalEl = $('#done-goal');
+  const goalId = goalEl && goalEl.value ? goalEl.value : null;
+  const category = ui.draft.category || 'Sonstiges';
+
+  if (existing) {
+    Object.assign(existing, { text, category, date, goalId });
+  } else {
+    data.dones.push({ id: uid(), text, category, date, goalId, createdAt: new Date().toISOString() });
+    const fav = $('#done-fav');
+    if (fav && fav.checked && !data.favorites.some(f => f.text === text)) {
+      data.favorites.push({ id: uid(), text, category, goalId });
+    }
+  }
+  save(); closeSheet(); render();
+  toast(existing ? 'Gespeichert' : '✅ Done eingetragen');
+}
+
+/* =========================================================
+   7. GEFÜHLS-CHECK-IN
+   ========================================================= */
+function allEmotions() {
+  return EMOTION_GROUPS.flatMap(g => g.items).concat(data.customEmotions);
+}
+function frequentEmotions(n) {
+  const count = {};
+  data.checkins.forEach(c => c.emotions.forEach(e => { count[e] = (count[e] || 0) + 1; }));
+  return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, n).map(([e]) => e);
+}
+function emoChip(e) {
+  return chip(e, ui.draft.emotions.has(e), `data-action="toggle-emotion" data-value="${esc(e)}" style="--c:${emotionColor(e)}"`);
+}
+function emotionChips() {
+  let h = '';
+  const freq = frequentEmotions(8);
+  if (freq.length) h += `<div class="group"><div class="group-name">⭐ Häufig</div><div class="chips">${freq.map(emoChip).join('')}</div></div>`;
+  for (const g of EMOTION_GROUPS) {
+    h += `<div class="group"><div class="group-name" style="color:${g.color}">${g.name}</div><div class="chips">${g.items.map(emoChip).join('')}</div></div>`;
+  }
+  if (data.customEmotions.length) {
+    h += `<div class="group"><div class="group-name">Eigene</div><div class="chips">${data.customEmotions.map(emoChip).join('')}</div></div>`;
+  }
+  return h;
+}
+
+function openCheckinSheet(existing = null) {
+  const c = existing || { mood: null, emotions: [], triggers: [], note: '' };
+  ui.draft = { mood: c.mood, emotions: new Set(c.emotions), triggers: new Set(c.triggers) };
+
+  const body = `
+    <div class="label" style="margin-top:4px">Wie geht es dir gerade?</div>
+    <div class="moods" id="ci-moods">${scaleButtons('mood', c.mood, true)}</div>
+    <div class="label">Was fühlst du? <span class="muted">(mehrere möglich)</span></div>
+    <div id="ci-emotions">${emotionChips()}</div>
+    <div class="add-row">
+      <input id="ci-custom" class="input" placeholder="Eigenes Gefühl hinzufügen" enterkeyhint="done" autocomplete="off">
+      <button type="button" class="btn small" data-action="add-emotion">＋</button>
+    </div>
+    <div class="label">Auslöser <span class="muted">(optional)</span></div>
+    <div class="chips">${TRIGGERS.map(t => chip(t, ui.draft.triggers.has(t), `data-action="toggle-trigger" data-value="${esc(t)}"`)).join('')}</div>
+    <div class="label">Notiz <span class="muted">(optional)</span></div>
+    <textarea id="ci-note" class="input" rows="3" placeholder="Was geht dir durch den Kopf?">${esc(c.note)}</textarea>
+    ${existing ? `
+      <p class="muted" style="font-size:13px">Eingetragen am ${esc(fmtDayLong(dateKey(new Date(c.ts))))} um ${fmtTime(c.ts)} Uhr</p>
+      <button class="btn danger full" data-action="delete-checkin" data-id="${existing.id}">Check-in löschen</button>` : ''}`;
+
+  openSheet(existing ? 'Check-in bearbeiten' : 'Gefühls-Check-in', body, () => saveCheckin(existing));
+}
+
+function addCustomEmotion(name) {
+  name = name.trim();
+  if (!name) return;
+  if (!allEmotions().includes(name)) { data.customEmotions.push(name); save(); }
+  ui.draft.emotions.add(name);
+}
+
+function saveCheckin(existing) {
+  if (!ui.draft.mood) { toast('Bitte zuerst die Stimmung wählen'); shake($('#ci-moods')); $('#sheet-body').scrollTop = 0; return; }
+  const custom = $('#ci-custom').value;
+  if (custom.trim()) addCustomEmotion(custom);
+  const entry = {
+    mood: ui.draft.mood,
+    emotions: [...ui.draft.emotions],
+    triggers: [...ui.draft.triggers],
+    note: $('#ci-note').value.trim(),
+  };
+  if (existing) Object.assign(existing, entry);
+  else data.checkins.push({ id: uid(), ts: new Date().toISOString(), ...entry });
+  save(); closeSheet(); render();
+  toast(existing ? 'Gespeichert' : '💗 Check-in gespeichert');
+}
+
+/* =========================================================
+   8. TAGESFAZIT
+   ========================================================= */
+function openReflectionSheet(k) {
+  const r = data.reflections[k] || { mood: null, text: '', sleep: null, energy: null, gratitude: [] };
+  ui.draft = { mood: r.mood, sleep: r.sleep, energy: r.energy };
+  const cis = checkinsOn(k), dones = donesOn(k);
+  const avg = cis.length ? (cis.reduce((s, c) => s + c.mood, 0) / cis.length).toFixed(1).replace('.', ',') : null;
+
+  const emoCount = {};
+  cis.forEach(c => c.emotions.forEach(e => { emoCount[e] = (emoCount[e] || 0) + 1; }));
+  const topEmos = Object.entries(emoCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const g = r.gratitude || [];
+
+  const body = `
+    <div class="card pad summary">
+      <strong>${esc(fmtDayLong(k))}</strong><br>
+      ${dones.length} Done${dones.length === 1 ? '' : 's'} · ${cis.length} Check-in${cis.length === 1 ? '' : 's'}${avg ? ` · Ø Stimmung ${avg}` : ''}
+      ${cis.length ? `<div class="curve">${cis.map(c => `<span><b style="height:${c.mood * 20}%;background:${MOOD_COLORS[c.mood]}"></b><small>${fmtTime(c.ts)}</small></span>`).join('')}</div>` : ''}
+      ${topEmos.length ? `<div class="muted">Gefühle: ${topEmos.map(([e, n]) => esc(e) + (n > 1 ? ` (${n}×)` : '')).join(', ')}</div>` : ''}
+    </div>
+    <div class="label">Gesamtstimmung des Tages</div>
+    <div class="moods" id="rf-moods">${scaleButtons('mood', r.mood, true)}</div>
+    <div class="label">Wie war dein Tag?</div>
+    <textarea id="rf-text" class="input" rows="4" placeholder="Dein Fazit in ein paar Sätzen …">${esc(r.text)}</textarea>
+    <div class="label">Schlafqualität <span class="muted">(optional)</span></div>
+    <div class="scale">${scaleButtons('sleep', r.sleep)}</div>
+    <div class="label">Energie <span class="muted">(optional)</span></div>
+    <div class="scale">${scaleButtons('energy', r.energy)}</div>
+    <div class="label">Dafür bin ich dankbar <span class="muted">(optional)</span></div>
+    ${[0, 1, 2].map(i => `<input class="input rf-grat" placeholder="${i + 1}." value="${esc(g[i] || '')}" autocomplete="off">`).join('')}
+    ${data.reflections[k] ? `<button class="btn danger full" style="margin-top:24px" data-action="delete-reflection" data-day="${k}">Fazit löschen</button>` : ''}`;
+
+  openSheet('Tagesfazit', body, () => saveReflection(k));
+}
+
+function saveReflection(k) {
+  if (!ui.draft.mood) { toast('Bitte die Gesamtstimmung wählen'); shake($('#rf-moods')); return; }
+  const gratitude = [...document.querySelectorAll('.rf-grat')].map(i => i.value.trim()).filter(Boolean);
+  data.reflections[k] = {
+    mood: ui.draft.mood, text: $('#rf-text').value.trim(),
+    sleep: ui.draft.sleep || null, energy: ui.draft.energy || null, gratitude,
+  };
+  save(); closeSheet(); render();
+  toast('🌙 Tagesfazit gespeichert');
+}
+
+/* =========================================================
+   9. LEBENSZIELE
+   ========================================================= */
+function openGoalSheet(existing = null) {
+  const g = existing || { title: '', description: '', area: LIFE_AREAS[0], status: 'active' };
+  const linked = existing ? data.dones.filter(d => d.goalId === existing.id).sort((a, b) => b.date.localeCompare(a.date)) : [];
+
+  const body = `
+    <input id="g-title" class="input" placeholder="Ziel, z. B. „Halbmarathon laufen“" value="${esc(g.title)}" autocomplete="off">
+    <textarea id="g-desc" class="input" rows="3" placeholder="Warum ist dir das wichtig?">${esc(g.description)}</textarea>
+    <div class="label">Lebensbereich</div>
+    <select id="g-area" class="input">${LIFE_AREAS.map(a => `<option ${a === g.area ? 'selected' : ''}>${a}</option>`).join('')}</select>
+    <div class="label">Status</div>
+    <select id="g-status" class="input">${Object.entries(GOAL_STATUS).map(([v, l]) => `<option value="${v}" ${v === g.status ? 'selected' : ''}>${l}</option>`).join('')}</select>
+    ${existing ? `
+      <div class="label">Darauf eingezahlt (${linked.length})</div>
+      <div class="card">${linked.length
+        ? linked.slice(0, 50).map(d => `<div class="row static"><span class="row-icon">${catIcon(d.category)}</span><span class="row-main"><span>${esc(d.text)}</span><small>${esc(fmtDayShort(d.date))}</small></span></div>`).join('')
+        : `<div class="empty">Noch keine Dones verknüpft. Wähle das Ziel beim Eintragen eines Dones aus.</div>`}
+      </div>
+      <button class="btn danger full" style="margin-top:24px" data-action="delete-goal" data-id="${existing.id}">Ziel löschen</button>` : ''}`;
+
+  openSheet(existing ? 'Lebensziel' : 'Neues Lebensziel', body, () => saveGoal(existing));
+  if (!existing) $('#g-title').focus();
+}
+
+function saveGoal(existing) {
+  const title = $('#g-title').value.trim();
+  if (!title) { shake($('#g-title')); return; }
+  const fields = { title, description: $('#g-desc').value.trim(), area: $('#g-area').value, status: $('#g-status').value };
+  if (existing) Object.assign(existing, fields);
+  else data.goals.push({ id: uid(), createdAt: new Date().toISOString(), ...fields });
+  save(); closeSheet(); render();
+  toast('🎯 Ziel gespeichert');
+}
+
+/* =========================================================
+   10. EXPORT (Markdown für KI, JSON als Backup) & IMPORT
+   ========================================================= */
+function exportFromKey() {
+  const el = $('#export-range');
+  const v = el ? el.value : '30';
+  if (v === 'all') return null;
+  const from = new Date();
+  from.setDate(from.getDate() - Number(v) + 1);
+  return dateKey(from);
+}
+
+function buildMarkdown(fromKey) {
+  const days = new Set();
+  data.dones.forEach(d => days.add(d.date));
+  data.checkins.forEach(c => days.add(dateKey(new Date(c.ts))));
+  Object.keys(data.reflections).forEach(k => days.add(k));
+  const sorted = [...days].filter(k => !fromKey || k >= fromKey).sort();
+
+  let md = `# Wellbeing-Tagebuch – Export\n\n`;
+  md += `Exportiert am ${new Date().toLocaleString('de-DE')}. Zeitraum: ${sorted.length ? sorted[0] + ' bis ' + sorted[sorted.length - 1] : 'keine Einträge'}.\n\n`;
+  md += `## Aufbau der Daten (Hinweis für die KI-Auswertung)\n\n`;
+  md += `- Persönliches Wellbeing-Tagebuch einer Person, chronologisch nach Tagen.\n`;
+  md += `- **Erledigt**: Done-Liste (was geschafft wurde), mit Kategorie und ggf. zugehörigem Lebensziel.\n`;
+  md += `- **Gefühls-Check-ins**: mehrere Momentaufnahmen pro Tag mit Uhrzeit, Stimmung 1–5, gewählten Gefühlen, Auslösern und Notiz.\n`;
+  md += `- **Tagesfazit**: Gesamtbewertung des Tages (Stimmung 1–5), Freitext, Schlafqualität 1–5, Energie 1–5, Dankbarkeit.\n`;
+  md += `- Skala: 1 = sehr schlecht, 2 = schlecht, 3 = neutral, 4 = gut, 5 = sehr gut.\n\n`;
+
+  if (data.goals.length) {
+    md += `## Lebensziele\n\n`;
+    data.goals.forEach(g => {
+      const n = data.dones.filter(d => d.goalId === g.id && (!fromKey || d.date >= fromKey)).length;
+      md += `- **${g.title}** (${g.area}, ${GOAL_STATUS[g.status]}, ${n} Dones im Zeitraum)${g.description ? ': ' + g.description : ''}\n`;
+    });
+    md += `\n`;
+  }
+
+  md += `## Tage\n\n`;
+  for (const k of sorted) {
+    md += `### ${k} (${parseKey(k).toLocaleDateString('de-DE', { weekday: 'long' })})\n\n`;
+    const dones = donesOn(k);
+    if (dones.length) {
+      md += `**Erledigt:**\n`;
+      dones.forEach(d => { md += `- ${d.text} [${d.category}]${d.goalId ? ` → Ziel: ${goalTitle(d.goalId)}` : ''}\n`; });
+      md += `\n`;
+    }
+    const cis = checkinsOn(k);
+    if (cis.length) {
+      md += `**Gefühls-Check-ins:**\n`;
+      cis.forEach(c => {
+        md += `- ${fmtTime(c.ts)} Uhr – Stimmung ${c.mood}/5`;
+        if (c.emotions.length) md += ` – Gefühle: ${c.emotions.join(', ')}`;
+        if (c.triggers.length) md += ` – Auslöser: ${c.triggers.join(', ')}`;
+        if (c.note) md += ` – Notiz: ${c.note.replace(/\n+/g, ' ')}`;
+        md += `\n`;
+      });
+      md += `\n`;
+    }
+    const r = data.reflections[k];
+    if (r) {
+      md += `**Tagesfazit:** Gesamtstimmung ${r.mood}/5`;
+      if (r.sleep) md += `, Schlaf ${r.sleep}/5`;
+      if (r.energy) md += `, Energie ${r.energy}/5`;
+      md += `\n`;
+      if (r.text) md += `> ${r.text.replace(/\n+/g, '\n> ')}\n`;
+      if (r.gratitude && r.gratitude.length) md += `Dankbar für: ${r.gratitude.join('; ')}\n`;
+      md += `\n`;
+    }
+  }
+  return md;
+}
+
+// Teilen-Menü des iPhones öffnen (Dateien, AirDrop, KI-App …), sonst Download
+async function shareFile(filename, content, mime) {
+  const file = new File([content], filename, { type: mime });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: filename });
+      return true;
+    } catch (e) {
+      if (e.name === 'AbortError') return false;
+    }
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return true;
+}
+
+async function exportJson() {
+  const ok = await shareFile(`wellbeing-backup-${dateKey()}.json`, JSON.stringify(data, null, 2), 'application/json');
+  if (ok) { data.settings.lastBackup = new Date().toISOString(); save(); render(); toast('💾 Backup erstellt'); }
+}
+
+function importJson(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const d = JSON.parse(reader.result);
+      if (!Array.isArray(d.dones) || !Array.isArray(d.checkins)) throw new Error('Kein Wellbeing-Backup');
+      const n = d.dones.length + d.checkins.length;
+      if (!confirm(`Backup mit ${n} Einträgen einspielen? Die aktuellen Daten auf diesem iPhone werden dabei ersetzt.`)) return;
+      const keepSettings = data.settings; // Face ID-Einstellung dieses Geräts behalten
+      const base = emptyData();
+      data = Object.assign(base, d, { settings: keepSettings });
+      save(); render(); toast('📂 Backup eingespielt');
+    } catch (e) {
+      alert('Die Datei konnte nicht gelesen werden: ' + e.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+/* =========================================================
+   11. FACE ID-SPERRE ("Türsteher" über einen Passkey)
+   ========================================================= */
+let isUnlocked = !data.settings.lockEnabled;
+let unlocking = false;
+const toB64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const fromB64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function enableLock() {
+  if (!window.PublicKeyCredential || !navigator.credentials) {
+    alert('Face ID ist hier nicht verfügbar. Öffne die App über den Home-Bildschirm (https-Adresse).');
+    return;
+  }
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'Wellbeing' },
+        user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'Wellbeing', displayName: 'Wellbeing-App' },
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+        timeout: 60000,
+      },
+    });
+    data.settings.credentialId = toB64(cred.rawId);
+    data.settings.lockEnabled = true;
+    isUnlocked = true;
+    save(); render();
+    toast('🔒 Face ID-Sperre aktiv');
+  } catch (e) {
+    console.error(e);
+    toast('Einrichtung abgebrochen');
+  }
+}
+
+async function verifyFaceId() {
+  try {
+    await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ type: 'public-key', id: fromB64(data.settings.credentialId) }],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
+    return true;
+  } catch (e) {
+    console.error(e);
+    return false;
+  }
+}
+
+function showLock() { $('#lock').classList.remove('hidden'); }
+function hideLock() { $('#lock').classList.add('hidden'); }
+
+async function tryUnlock() {
+  if (unlocking) return;
+  unlocking = true;
+  const ok = await verifyFaceId();
+  unlocking = false;
+  if (ok) { isUnlocked = true; hideLock(); render(); }
+}
+
+async function disableLock() {
+  if (!(await verifyFaceId())) { toast('Face ID nicht bestätigt'); return; }
+  data.settings.lockEnabled = false;
+  data.settings.credentialId = null;
+  isUnlocked = true;
+  save(); render();
+  toast('Face ID-Sperre aus');
+}
+
+function withinGrace() {
+  const last = Number(localStorage.getItem(LAST_ACTIVE_KEY) || 0);
+  return Date.now() - last <= data.settings.graceMinutes * 60000;
+}
+
+// App geht in den Hintergrund → Inhalte verdecken; kommt zurück → ggf. Face ID
+document.addEventListener('visibilitychange', () => {
+  if (!data.settings.lockEnabled) { if (document.visibilityState === 'visible') render(); return; }
+  if (document.visibilityState === 'hidden') {
+    if (isUnlocked) localStorage.setItem(LAST_ACTIVE_KEY, String(Date.now()));
+    showLock();
+  } else {
+    if (isUnlocked && withinGrace()) { hideLock(); render(); }
+    else { isUnlocked = false; showLock(); tryUnlock(); }
+  }
+});
+
+/* =========================================================
+   12. KLICKS & EINGABEN (alle Buttons laufen hier zusammen)
+   ========================================================= */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  const { action, id, day, value } = el.dataset;
+
+  switch (action) {
+    // Navigation
+    case 'tab': ui.tab = el.dataset.tab; render(); window.scrollTo(0, 0); break;
+    case 'cal-prev': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() - 1, 1); render(); break;
+    case 'cal-next': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() + 1, 1); render(); break;
+    case 'select-day': ui.calSelected = day; render(); break;
+    case 'hide-hint': localStorage.setItem(HINT_KEY, '1'); render(); break;
+
+    // Eingabefenster
+    case 'sheet-cancel': closeSheet(); break;
+    case 'sheet-save': if (sheetSave) sheetSave(); break;
+    case 'pick-scale': {
+      const v = Number(value), field = el.dataset.field;
+      const alreadyOn = el.classList.contains('on');
+      const newVal = alreadyOn && field !== 'mood' ? null : v; // Schlaf/Energie per erneutem Tap abwählbar
+      ui.draft[field] = newVal;
+      el.parentElement.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('on', newVal !== null && b === el));
+      break;
+    }
+
+    // Done
+    case 'new-done': openDoneSheet(day || dateKey()); break;
+    case 'edit-done': { const d = data.dones.find(x => x.id === id); if (d) openDoneSheet(d.date, d); break; }
+    case 'pick-cat': {
+      const deselect = ui.draft.category === value; // erneut antippen = abwählen
+      ui.draft.category = deselect ? null : value;
+      el.parentElement.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', !deselect && c === el));
+      break;
+    }
+    case 'quick-done': {
+      const dateEl = $('#done-date');
+      data.dones.push({
+        id: uid(), text: el.dataset.text, category: el.dataset.cat, goalId: el.dataset.goal || null,
+        date: (dateEl && dateEl.value) || dateKey(), createdAt: new Date().toISOString(),
+      });
+      save(); closeSheet(); render();
+      toast('✅ ' + truncate(el.dataset.text, 28));
+      break;
+    }
+    case 'delete-done':
+      if (confirm('Dieses Done löschen?')) { data.dones = data.dones.filter(x => x.id !== id); save(); closeSheet(); render(); }
+      break;
+
+    // Check-in
+    case 'new-checkin': openCheckinSheet(); break;
+    case 'edit-checkin': { const c = data.checkins.find(x => x.id === id); if (c) openCheckinSheet(c); break; }
+    case 'toggle-emotion': {
+      const on = !ui.draft.emotions.has(value);
+      if (on) ui.draft.emotions.add(value); else ui.draft.emotions.delete(value);
+      document.querySelectorAll('#ci-emotions .chip').forEach(c => { if (c.dataset.value === value) c.classList.toggle('on', on); });
+      break;
+    }
+    case 'toggle-trigger': {
+      const on = !ui.draft.triggers.has(value);
+      if (on) ui.draft.triggers.add(value); else ui.draft.triggers.delete(value);
+      el.classList.toggle('on', on);
+      break;
+    }
+    case 'add-emotion': {
+      const input = $('#ci-custom');
+      if (!input.value.trim()) { input.focus(); break; }
+      addCustomEmotion(input.value); input.value = '';
+      $('#ci-emotions').innerHTML = emotionChips();
+      break;
+    }
+    case 'delete-checkin':
+      if (confirm('Diesen Check-in löschen?')) { data.checkins = data.checkins.filter(x => x.id !== id); save(); closeSheet(); render(); }
+      break;
+
+    // Tagesfazit
+    case 'open-reflection': openReflectionSheet(day); break;
+    case 'delete-reflection':
+      if (confirm('Tagesfazit löschen?')) { delete data.reflections[day]; save(); closeSheet(); render(); }
+      break;
+
+    // Ziele
+    case 'new-goal': openGoalSheet(); break;
+    case 'open-goal': { const g = data.goals.find(x => x.id === id); if (g) openGoalSheet(g); break; }
+    case 'delete-goal':
+      if (confirm('Ziel löschen? Verknüpfte Dones bleiben erhalten.')) {
+        data.goals = data.goals.filter(x => x.id !== id);
+        data.dones.forEach(d => { if (d.goalId === id) d.goalId = null; });
+        data.favorites.forEach(f => { if (f.goalId === id) f.goalId = null; });
+        save(); closeSheet(); render();
+      }
+      break;
+
+    // Mehr
+    case 'del-fav': data.favorites = data.favorites.filter(f => f.id !== id); save(); render(); break;
+    case 'export-md': {
+      const md = buildMarkdown(exportFromKey());
+      shareFile(`wellbeing-export-${dateKey()}.md`, md, 'text/plain');
+      break;
+    }
+    case 'copy-md': {
+      const md = buildMarkdown(exportFromKey());
+      navigator.clipboard.writeText(md).then(() => toast('📋 Kopiert – jetzt in die KI einfügen'), () => toast('Kopieren nicht möglich'));
+      break;
+    }
+    case 'export-json': exportJson(); break;
+    case 'import-json': $('#import-file').click(); break;
+
+    // Face ID
+    case 'lock-enable': enableLock(); break;
+    case 'lock-disable': disableLock(); break;
+    case 'lock-now': isUnlocked = false; localStorage.removeItem(LAST_ACTIVE_KEY); showLock(); break;
+    case 'unlock': tryUnlock(); break;
+  }
+});
+
+// Return-Taste in Textfeldern
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if (e.target.id === 'done-text') { e.preventDefault(); if (sheetSave) sheetSave(); }
+  if (e.target.id === 'ci-custom') { e.preventDefault(); $('[data-action="add-emotion"]').click(); }
+  if (e.target.id === 'g-title') { e.preventDefault(); $('#g-desc').focus(); }
+});
+
+document.addEventListener('change', e => {
+  if (e.target.dataset.change === 'grace') { data.settings.graceMinutes = Number(e.target.value); save(); }
+  if (e.target.id === 'import-file' && e.target.files[0]) { importJson(e.target.files[0]); e.target.value = ''; }
+});
+
+/* =========================================================
+   13. START
+   ========================================================= */
+function init() {
+  // Browser bitten, die Daten nicht automatisch zu löschen
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+  // Offline-Fähigkeit (Service Worker), nur über https
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+
+  if (data.settings.lockEnabled) {
+    if (withinGrace()) { isUnlocked = true; }
+    else { isUnlocked = false; showLock(); tryUnlock(); }
+  }
+  render();
+}
+init();
+</script>
+</body>
+</html>
