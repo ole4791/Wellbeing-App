@@ -31,7 +31,8 @@
   --accent: #007AFF;
   --green: #34C759; --pink: #FF2D55; --orange: #FF9500; --red: #FF3B30; --indigo: #5856D6;
   /* Farben der drei Eintragsarten: bewusst neutral, keine Ampel */
-  --c-done: #007AFF; --c-grat: #30B0C7; --c-feel: #AF52DE;
+  --c-done: #007AFF; --c-grat: #30B0C7; --c-feel: #AF52DE; --c-quest: #5856D6;
+  --seg-on: #FFFFFF;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -48,7 +49,8 @@
     --material: rgba(29,29,31,.8);
     --accent: #0A84FF;
     --green: #30D158; --pink: #FF375F; --orange: #FF9F0A; --red: #FF453A; --indigo: #5E5CE6;
-    --c-done: #0A84FF; --c-grat: #40C8E0; --c-feel: #BF5AF2;
+    --c-done: #0A84FF; --c-grat: #40C8E0; --c-feel: #BF5AF2; --c-quest: #7D7AFF;
+    --seg-on: #636366;
   }
 }
 
@@ -314,6 +316,47 @@ input[type=date].inline { font: inherit; font-size: 17px; border: 0; background:
 .wday.today .wdot { box-shadow: 0 0 0 2px var(--text); }
 .wday .wbar { display: flex; gap: 2px; height: 4px; }
 .wday .wbar i { width: 4px; height: 4px; border-radius: 50%; background: var(--c-done); }
+
+/* =========================================================
+   10. MODUL „WAS MIR GUTTUT“: Quest-Karte, Liste, Umschalter
+   ========================================================= */
+.quest { margin-top: 16px; border-radius: 16px; padding: 16px; position: relative; overflow: hidden;
+  background: radial-gradient(130% 100% at 0% 0%, color-mix(in srgb, var(--c-quest) 14%, transparent), transparent 65%), var(--card); }
+.quest-label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .2px; color: var(--c-quest); }
+.quest-title { font-size: 20px; font-weight: 700; letter-spacing: .35px; margin: 6px 0 0; line-height: 1.25; }
+.quest-sub { font-size: 15px; color: var(--secondary); letter-spacing: -.24px; margin-top: 4px; line-height: 1.35; }
+.quest-cta { margin-top: 14px; display: inline-flex; align-items: center; gap: 6px; background: var(--c-quest); color: #fff;
+  border-radius: 12px; padding: 11px 16px; font-weight: 600; }
+.quest-cta:active { opacity: .8; }
+.q-items { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+.q-item { background: color-mix(in srgb, var(--bg) 55%, var(--card)); border-radius: 12px; padding: 10px 12px; }
+.q-row { display: flex; align-items: center; gap: 12px; }
+.q-check { width: 28px; height: 28px; border-radius: 50%; border: 2px solid var(--tertiary); color: #fff;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .2s; }
+.q-check:active { transform: scale(.9); }
+.q-item.done .q-check { background: var(--c-quest); border-color: var(--c-quest); }
+.q-item.done .q-text > span:first-child { color: var(--secondary); }
+.q-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.q-meta { font-size: 13px; color: var(--secondary); letter-spacing: -.08px; }
+.rate { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 8px 0 0 40px; font-size: 15px; color: var(--secondary); }
+.stars { display: flex; gap: 2px; }
+.star-btn { color: var(--tertiary); padding: 2px; }
+.star-btn:active { color: #FF9F0A; transform: scale(1.15); }
+.rated { display: flex; gap: 2px; margin: 4px 0 0 40px; color: var(--tertiary); }
+.rated .on { color: #FF9F0A; }
+.quest-foot { margin-top: 12px; font-size: 13px; color: var(--secondary); letter-spacing: -.08px; }
+.quest-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 12px; }
+.link-btn.small { font-size: 15px; font-weight: 500; letter-spacing: -.24px; color: var(--c-quest); }
+.intro-card { background: var(--card); border-radius: 12px; padding: 14px 16px; font-size: 15px; line-height: 1.42; letter-spacing: -.24px; color: var(--secondary); margin-top: 18px; }
+.seg-list { padding: 4px 0; }
+.seg-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 16px; }
+.seg-row > span { width: 64px; flex-shrink: 0; }
+.seg-row + .seg-row { border-top: .5px solid var(--sep); }
+.segmented { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--fill); border-radius: 9px; padding: 2px; }
+.segmented button { padding: 6px 4px; font-size: 13px; font-weight: 500; border-radius: 7px; letter-spacing: -.08px; transition: background .15s; }
+.segmented button.on { background: var(--seg-on); box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 1px 1px rgba(0,0,0,.04); font-weight: 600; }
+.chip .ic { flex-shrink: 0; }
+
 </style>
 </head>
 <body>
@@ -365,6 +408,7 @@ const ICONS = {
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   more: '<circle cx="12" cy="12" r="9"/><circle cx="7.8" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="16.2" cy="12" r=".6" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  flag: '<path d="M5.5 21V4M5.5 4.5h11.5l-2.5 4 2.5 4H5.5"/>',
   sliders: '<path d="M4 7h9.5M18.5 7H20M4 17h3.5M12.5 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="10" cy="17" r="2.3"/>',
   checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.8 2.8L16.2 9.8"/>',
   heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/>',
@@ -484,7 +528,7 @@ function uid() { return crypto.randomUUID ? crypto.randomUUID() : Date.now().toS
 
 function emptyData() {
   return {
-    version: 2,
+    version: 3,
     dones: [],        // { id, text, category, date, goalId, createdAt }
     checkins: [],     // { id, ts, mood, emotions[], triggers[], note }
     gratitude: [],    // { id, text, date, createdAt }
@@ -493,6 +537,10 @@ function emptyData() {
     favorites: [],    // { id, text, category, goalId }
     customEmotions: [],
     categories: null, // { id, name, icon, color, hidden }
+    // Modul „Was mir guttut“ – erweiterbar um weitere Listen (social, savoring, values, strengths …)
+    lists: { activities: [] }, // { id, text, duration: 'short'|'long'|null, setting: 'alone'|'together'|null, createdAt }
+    quests: { daily: {} },     // 'JJJJ-MM-TT' → { source, suggestions[], skipped[] }; später weekly: { 'JJJJ-Www': … }
+    questLog: [],              // { id, source, itemId, text, date, doneAt, rating 1–5|null }
     settings: { lockEnabled: false, credentialId: null, graceMinutes: 5, lastBackup: null, name: '' },
   };
 }
@@ -510,7 +558,17 @@ function normalize(d) {
       delete r.gratitude;
     }
   }
-  out.version = 2;
+  // v3: Modul „Was mir guttut“
+  if (!out.lists || typeof out.lists !== 'object') out.lists = {};
+  if (!Array.isArray(out.lists.activities)) out.lists.activities = [];
+  if (!out.quests || typeof out.quests !== 'object') out.quests = {};
+  if (!out.quests.daily || typeof out.quests.daily !== 'object') out.quests.daily = {};
+  if (!Array.isArray(out.questLog)) out.questLog = [];
+  // alte Tages-Quests (älter als 60 Tage) aufräumen – die Zählung steckt im questLog
+  const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 60);
+  const ck = `${cutoff.getFullYear()}-${String(cutoff.getMonth() + 1).padStart(2, '0')}-${String(cutoff.getDate()).padStart(2, '0')}`;
+  Object.keys(out.quests.daily).forEach(k => { if (k < ck) delete out.quests.daily[k]; });
+  out.version = 3;
   return out;
 }
 
@@ -585,15 +643,18 @@ const ui = {
   calMonth: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
   calSelected: dateKey(),
   draft: {},
+  ratingFor: null,  // Quest: für welchen Eintrag gerade „Wie war's?“ offen ist
+  inspCat: null,    // aufgeklappte Denkanstoß-Kategorie
 };
 // Menüpunkte hinter dem ⋯-Knopf
 const TABS = [
   { id: 'today', label: 'Heute', icon: 'sun' },
+  { id: 'goodlist', label: 'Was mir guttut', icon: 'flag' },
   { id: 'calendar', label: 'Kalender', icon: 'calendar' },
   { id: 'goals', label: 'Lebensziele', icon: 'target' },
   { id: 'more', label: 'Einstellungen', icon: 'sliders' },
 ];
-const TITLES = { today: 'Heute', calendar: 'Kalender', goals: 'Lebensziele', more: 'Einstellungen' };
+const TITLES = { today: 'Heute', goodlist: 'Was mir guttut', calendar: 'Kalender', goals: 'Lebensziele', more: 'Einstellungen' };
 
 function renderChrome() {
   $('#quickbar').innerHTML = `
@@ -605,7 +666,7 @@ function renderChrome() {
 }
 
 function render() {
-  const views = { today: renderToday, calendar: renderCalendar, goals: renderGoals, more: renderMore };
+  const views = { today: renderToday, goodlist: renderGoodList, calendar: renderCalendar, goals: renderGoals, more: renderMore };
   $('#title').textContent = TITLES[ui.tab];
   $('#navbar').textContent = TITLES[ui.tab];
   $('#view').innerHTML = views[ui.tab]();
@@ -638,7 +699,7 @@ const chevron = () => icon('chevron', 14, 2.6);
 // --- Heute ---
 function renderToday() {
   const k = dateKey();
-  let html = `<p class="date-sub">${esc(fmtDayLong(k))}</p>` + renderHero(k);
+  let html = `<p class="date-sub">${esc(fmtDayLong(k))}</p>` + renderQuestCard() + renderHero(k);
   const entries = data.dones.length + data.checkins.length;
   const lb = data.settings.lastBackup;
   if (entries >= 10 && (!lb || daysSince(lb) >= 14)) {
@@ -829,7 +890,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.3 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.4 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
 }
 
 /* =========================================================
@@ -1252,6 +1313,7 @@ function buildMarkdown(fromKey) {
   md += `- **Gefühls-Check-ins**: mehrere Momentaufnahmen pro Tag mit Uhrzeit, Stimmung 1–5, gewählten Gefühlen, Auslösern und Notiz.\n`;
   md += `- **Dankbar für**: Dankbarkeitstagebuch, beliebig viele Einträge pro Tag.\n`;
   md += `- **Tagesfazit**: Gesamtbewertung des Tages (Stimmung 1–5), Freitext, Schlafqualität 1–5, Energie 1–5.\n`;
+  md += `- **Was mir guttut**: persönliche Liste angenehmer Aktivitäten (Verhaltensaktivierung) und per Tages-Quest erledigte Aktivitäten mit optionaler Bewertung.\n`;
   md += `- Skala: 1 = sehr schlecht, 2 = schlecht, 3 = neutral, 4 = gut, 5 = sehr gut.\n\n`;
   if (data.goals.length) {
     md += `## Lebensziele\n\n`;
@@ -1260,6 +1322,25 @@ function buildMarkdown(fromKey) {
       md += `- **${g.title}** (${g.area}, ${GOAL_STATUS[g.status]}, ${n} Dones im Zeitraum)${g.description ? ': ' + g.description : ''}\n`;
     });
     md += `\n`;
+  }
+  // Modul „Was mir guttut“ (eigener Abschnitt, nicht mit den Tagen verknüpft)
+  const acts = data.lists.activities;
+  const qlog = data.questLog.filter(l => !fromKey || l.date >= fromKey).sort((a, b) => a.date.localeCompare(b.date));
+  if (acts.length || qlog.length) {
+    md += `## Was mir guttut (angenehme Aktivitäten)\n\n`;
+    if (acts.length) {
+      md += `**Meine Liste:**\n`;
+      acts.forEach(a => { const m = metaText(a); md += `- ${a.text}${m ? ` (${m})` : ''}\n`; });
+      md += `\n`;
+    }
+    if (qlog.length) {
+      md += `**Erledigt im Zeitraum (Tages-Quest, Bewertung 1–5 Sterne):**\n`;
+      qlog.forEach(l => {
+        const a = acts.find(x => x.id === l.itemId);
+        md += `- ${l.date}: ${a ? a.text : l.text}${l.rating ? ` – ${'★'.repeat(l.rating)}${'☆'.repeat(5 - l.rating)}` : ''}\n`;
+      });
+      md += `\n`;
+    }
   }
   md += `## Tage\n\n`;
   for (const k of sorted) {
@@ -1410,6 +1491,341 @@ document.addEventListener('visibilitychange', () => {
 });
 
 /* =========================================================
+   14b. MODUL „WAS MIR GUTTUT“ + TAGES-QUEST
+   Angelehnt an die Verhaltensaktivierung: angenehme Aktivitäten
+   bewusst einplanen. Steht für sich, ohne Verknüpfung zu Done,
+   Dankbarkeit oder Gefühlen.
+
+   Erweiterbar: Jede Liste meldet sich in QUEST_SOURCES an
+   (Texte, Merkmale, Denkanstöße, Auswahl-Logik). Später z. B.
+   'social', 'savoring', 'values', 'strengths'. Es bleibt bei
+   EINER Tages-Quest; welche Liste sie speist, entscheidet
+   dailyQuestSource() – heute immer 'activities'.
+   ========================================================= */
+
+// Merkmale eines Listeneintrags (für Umschalter und Anzeige)
+const ITEM_FIELDS = {
+  duration: { label: 'Dauer', options: [['short', 'Kurz'], ['long', 'Länger']] },
+  setting: { label: 'Rahmen', options: [['alone', 'Allein'], ['together', 'Mit anderen']] },
+};
+const fieldLabel = (field, value) => (ITEM_FIELDS[field].options.find(o => o[0] === value) || [null, ''])[1];
+
+const QUEST_SOURCES = {
+  activities: {
+    title: 'Was mir guttut',
+    listTitle: 'Meine Aktivitäten',
+    icon: 'flag',
+    color: 'var(--c-quest)',
+    placeholder: 'Was tut dir gut? z. B. Spaziergang',
+    fields: ['duration', 'setting'],
+    intro: 'Wenn es uns nicht gut geht, lassen wir oft zuerst die Dinge weg, die uns eigentlich guttun, und fühlen uns dadurch noch schlechter. '
+      + 'Wer angenehme Aktivitäten bewusst einplant, statt auf Lust zu warten, durchbricht diesen Kreislauf: Die Stimmung folgt oft dem Tun. '
+      + 'Deine Liste ist die Grundlage für die Tages-Quest auf der Startseite.',
+    questTitles: [
+      'Gönn dir heute eine deiner Lieblingsaktivitäten',
+      'Was davon passt heute in deinen Tag?',
+      'Kleine Dinge, die guttun: such dir eins aus',
+      'Heute ist ein guter Tag für etwas Schönes',
+      'Nimm dir heute ein bisschen Zeit für dich',
+    ],
+    emptyTitle: 'Was tut dir gut?',
+    emptyText: 'Leg eine kleine Liste mit Dingen an, die dir guttun. Dann schlägt dir die App hier jeden Tag etwas daraus vor.',
+    // Denkanstöße: Kategorien mit Beispielideen (Merkmale vorausgefüllt)
+    inspirations: [
+      { name: 'Draußen', icon: 'sun', ideas: [['Spaziergang im Park', 'short', 'alone'], ['Sonnenuntergang anschauen', 'short', null], ['Ausflug ins Grüne', 'long', 'together'], ['Draußen im Café sitzen', 'short', null]] },
+      { name: 'Bewegung', icon: 'dumbbell', ideas: [['10 Minuten dehnen', 'short', 'alone'], ['Radtour', 'long', null], ['Schwimmen gehen', 'long', null], ['Zu Musik tanzen', 'short', 'alone']] },
+      { name: 'Kreativ', icon: 'brush', ideas: [['Zeichnen oder kritzeln', 'short', 'alone'], ['Etwas Neues kochen', 'long', null], ['Fotospaziergang', 'long', 'alone'], ['Musik machen', 'short', 'alone']] },
+      { name: 'Genuss', icon: 'cup', ideas: [['Kaffee in Ruhe trinken', 'short', 'alone'], ['Lieblingsessen kochen', 'long', null], ['Ein warmes Bad nehmen', 'short', 'alone'], ['Lieblingsalbum hören', 'short', 'alone']] },
+      { name: 'Ruhe', icon: 'moon', ideas: [['5 Minuten bewusst atmen', 'short', 'alone'], ['Ein Kapitel lesen', 'short', 'alone'], ['Ohne Handy in die Natur', 'long', 'alone'], ['Früh schlafen gehen', 'short', 'alone']] },
+      { name: 'Mit anderen', icon: 'people', ideas: [['Freund*in anrufen', 'short', 'together'], ['Gemeinsam kochen', 'long', 'together'], ['Spieleabend', 'long', 'together'], ['Spontan auf einen Kaffee treffen', 'short', 'together']] },
+      { name: 'Kostenlos', icon: 'tag', ideas: [['Bibliothek besuchen', 'long', 'alone'], ['Sterne anschauen', 'short', null], ['Alte Fotos ansehen', 'short', null], ['Picknick im Park', 'long', 'together']] },
+      { name: 'Unter 15 Minuten', icon: 'timer', ideas: [['Lieblingslied laut hören', 'short', 'alone'], ['Pflanzen gießen', 'short', 'alone'], ['Eine nette Nachricht schreiben', 'short', 'together'], ['Fenster auf, frische Luft', 'short', 'alone']] },
+    ],
+  },
+};
+
+const dailyQuestSource = () => 'activities';
+
+// Zufall, der nur vom Text abhängt: gleiche Eingabe → gleiches Ergebnis (0…1)
+function seeded(str) {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0) / 4294967296;
+}
+
+const isWeekend = k => [0, 6].includes(parseKey(k).getDay());
+const questLogOn = (k, source) => data.questLog.filter(l => l.date === k && (!source || l.source === source));
+const monthQuestCount = k => data.questLog.filter(l => l.date.slice(0, 7) === k.slice(0, 7)).length;
+
+// Wann war ein Eintrag zuletzt dran? → { itemId: 'JJJJ-MM-TT' }
+function lastDoneMap(source) {
+  const m = {};
+  data.questLog.forEach(l => { if (l.source === source && (!m[l.itemId] || l.date > m[l.itemId])) m[l.itemId] = l.date; });
+  return m;
+}
+function lastDoneText(source, itemId) {
+  const d = lastDoneMap(source)[itemId];
+  if (!d) return 'noch nie gemacht';
+  const days = Math.round((parseKey(dateKey()) - parseKey(d)) / 86400000);
+  return 'zuletzt ' + (days === 0 ? 'heute' : days === 1 ? 'gestern' : `vor ${days} Tagen`);
+}
+
+// Rangfolge: am längsten nicht dran zuerst, nie gemacht ganz oben,
+// Gleichstand per Tages-Zufall (stabil innerhalb eines Tages)
+function rankItems(source, items, k) {
+  const last = lastDoneMap(source);
+  const today = parseKey(k);
+  return items
+    .map(it => {
+      const d = last[it.id];
+      const days = d ? Math.round((today - parseKey(d)) / 86400000) : 100000;
+      return { it, score: days + seeded(k + it.id) * 0.99 };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map(x => x.it);
+}
+
+// Wählt bis zu `count` Vorschläge aus der Aktivitätenliste
+function pickActivities(k, exclude, count) {
+  let pool = data.lists.activities.filter(a => !exclude.includes(a.id));
+  if (!isWeekend(k)) {
+    // Unter der Woche: kurze und solche ohne Dauer; reicht das nicht, auch längere
+    const short = pool.filter(a => a.duration !== 'long');
+    if (short.length >= Math.min(2, count)) pool = short;
+  }
+  const ranked = rankItems('activities', pool, k);
+  const out = ranked.slice(0, 2);
+  // Abwechslung: Sind die ersten beiden gleich (allein/allein), wenn möglich etwas anderes als dritten
+  if (count > 2 && ranked.length > 2) {
+    const s = out.map(a => a.setting);
+    const want = s[0] && s[0] === s[1] ? ranked.slice(2, 6).find(a => a.setting && a.setting !== s[0]) : null;
+    out.push(want || ranked[2]);
+  }
+  return out.slice(0, count).map(a => a.id);
+}
+
+// Holt die Quest des Tages; legt sie beim ersten Öffnen an und bleibt dann gleich
+function getDailyQuest(k = dateKey()) {
+  const source = dailyQuestSource();
+  const items = data.lists[source];
+  if (!items.length) return null;
+  let q = data.quests.daily[k];
+  let changed = false;
+  if (!q || q.source !== source) { q = { source, suggestions: [], skipped: [] }; data.quests.daily[k] = q; changed = true; }
+  const ids = new Set(items.map(i => i.id));
+  const before = q.suggestions.length;
+  q.suggestions = q.suggestions.filter(id => ids.has(id)); // gelöschte entfernen
+  if (q.suggestions.length !== before) changed = true;
+  const target = Math.min(3, items.length);
+  if (q.suggestions.length < target) {
+    let extra = pickActivities(k, [...q.suggestions, ...q.skipped], target - q.suggestions.length);
+    if (!extra.length) extra = pickActivities(k, q.suggestions, target - q.suggestions.length);
+    q.suggestions.push(...extra);
+    changed = true;
+  }
+  if (changed) save();
+  return q;
+}
+
+// „Passt heute nicht“: offene Vorschläge gegen neue tauschen (nur für heute)
+function skipDailyQuest() {
+  const k = dateKey();
+  const q = getDailyQuest(k);
+  if (!q) return;
+  const doneIds = questLogOn(k, q.source).map(l => l.itemId);
+  const open = q.suggestions.filter(id => !doneIds.includes(id));
+  if (!open.length) return;
+  q.skipped = [...new Set([...q.skipped, ...open])];
+  const keep = q.suggestions.filter(id => doneIds.includes(id));
+  let next = pickActivities(k, [...keep, ...q.skipped], open.length);
+  if (!next.length) { q.skipped = [...open]; next = pickActivities(k, [...keep, ...open], open.length); } // Runde von vorn
+  if (!next.length) { toast('Mehr Ideen? Ergänze deine Liste.', false); return; }
+  q.suggestions = [...keep, ...next];
+  save(); render();
+}
+
+function toggleQuestDone(itemId) {
+  const k = dateKey(), source = dailyQuestSource();
+  const existing = questLogOn(k, source).find(l => l.itemId === itemId);
+  if (existing) {
+    data.questLog = data.questLog.filter(l => l !== existing);
+    ui.ratingFor = null;
+    save(); render(); toast('Zurückgenommen', false);
+    return;
+  }
+  const item = data.lists[source].find(i => i.id === itemId);
+  const log = { id: uid(), source, itemId, text: item ? item.text : '', date: k, doneAt: new Date().toISOString(), rating: null };
+  data.questLog.push(log);
+  ui.ratingFor = log.id;
+  save(); render();
+}
+
+const starIcon = (filled, size = 24) =>
+  `<svg class="ic" viewBox="0 0 24 24" width="${size}" height="${size}" fill="${filled ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round">${ICONS.star}</svg>`;
+const metaText = it => [fieldLabel('duration', it.duration), fieldLabel('setting', it.setting)].filter(Boolean).join(' · ');
+
+// --- Quest-Karte auf „Heute“ ---
+function renderQuestCard() {
+  const k = dateKey();
+  const source = dailyQuestSource();
+  const src = QUEST_SOURCES[source];
+  const label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest</div>`;
+  const q = getDailyQuest(k);
+
+  if (!q) {
+    return `<div class="quest">${label}
+      <div class="quest-title">${esc(src.emptyTitle)}</div>
+      <div class="quest-sub">${esc(src.emptyText)}</div>
+      <button class="quest-cta" data-action="open-list">${icon('plus', 18, 2.4)}Liste anlegen</button></div>`;
+  }
+
+  const items = data.lists[source];
+  const logs = questLogOn(k, source);
+  const doneIds = logs.map(l => l.itemId);
+  const anyDone = q.suggestions.some(id => doneIds.includes(id));
+  const allDone = q.suggestions.every(id => doneIds.includes(id));
+  const title = src.questTitles[Math.floor(seeded('title' + k) * src.questTitles.length)];
+  const n = monthQuestCount(k);
+
+  const rows = q.suggestions.map(id => {
+    const it = items.find(i => i.id === id);
+    if (!it) return '';
+    const log = logs.find(l => l.itemId === id);
+    const meta = metaText(it);
+    let extra = '';
+    if (log && ui.ratingFor === log.id && !log.rating) {
+      extra = `<div class="rate"><span>Wie war's?</span><span class="stars">${[1, 2, 3, 4, 5].map(v =>
+        `<button class="star-btn" data-action="quest-rate" data-id="${log.id}" data-value="${v}" aria-label="${v} Sterne">${starIcon(false, 26)}</button>`).join('')}</span>
+        <button class="link-btn small" data-action="quest-rate-skip">Überspringen</button></div>`;
+    } else if (log && log.rating) {
+      extra = `<div class="rated">${[1, 2, 3, 4, 5].map(v => `<span class="${v <= log.rating ? 'on' : ''}">${starIcon(v <= log.rating, 14)}</span>`).join('')}</div>`;
+    }
+    return `<div class="q-item ${log ? 'done' : ''}">
+      <div class="q-row">
+        <button class="q-check" data-action="quest-done" data-id="${id}" aria-label="${log ? 'Zurücknehmen' : 'Erledigt'}">${log ? icon('check', 16, 3) : ''}</button>
+        <span class="q-text"><span>${esc(it.text)}</span>${meta ? `<span class="q-meta">${esc(meta)}</span>` : ''}</span>
+      </div>${extra}</div>`;
+  }).join('');
+
+  return `<div class="quest">${label}
+    <div class="quest-title">${esc(anyDone ? 'Schön, dass du dir Zeit dafür genommen hast' : title)}</div>
+    ${anyDone ? `<div class="quest-sub">Wenn du magst, ist noch mehr drin.</div>` : ''}
+    <div class="q-items">${rows}</div>
+    <div class="quest-foot">
+      <span>${n ? `Diesen Monat ${n} ${n === 1 ? 'Ding' : 'Dinge'} gemacht, die dir guttun` : 'Jedes Mal zählt, ganz ohne Druck.'}</span>
+    </div>
+    <div class="quest-actions">
+      ${!allDone && items.length > q.suggestions.length ? `<button class="link-btn small" data-action="quest-skip">Passt heute nicht, anderer Vorschlag</button>` : '<span></span>'}
+      <button class="link-btn small" data-action="open-list">Liste</button>
+    </div></div>`;
+}
+
+// --- Seite „Was mir guttut“ ---
+function renderGoodList() {
+  const source = 'activities';
+  const src = QUEST_SOURCES[source];
+  const items = data.lists[source];
+  const texts = new Set(items.map(i => i.text.toLowerCase()));
+  let html = `<div class="intro-card">${esc(src.intro)}</div>`;
+
+  html += secHead(src.listTitle, items.length || null, 'new-activity', null, src.color);
+  html += `<div class="list">${items.length ? items.map(it => {
+    const meta = metaText(it);
+    return cell({ title: esc(it.text), sub: [meta, lastDoneText(source, it.id)].filter(Boolean).map(esc).join(' · '),
+      acc: chevron(), action: 'edit-activity', attrs: `data-id="${it.id}"` });
+  }).join('') : emptyCell('Noch leer. Leg los oder lass dich unten inspirieren.')}</div>`;
+
+  html += secHead('Denkanstöße');
+  html += `<p class="group-foot" style="margin:-2px 4px 10px">Tippe eine Kategorie an und übernimm Ideen mit einem Tipp.</p>`;
+  html += `<div class="chips">${src.inspirations.map(c => `
+    <button type="button" class="chip ${ui.inspCat === c.name ? 'on' : ''}" style="--c:var(--c-quest)" data-action="insp-cat" data-value="${esc(c.name)}">
+      ${icon(c.icon, 15, 2)}${esc(c.name)}</button>`).join('')}</div>`;
+  const cat = src.inspirations.find(c => c.name === ui.inspCat);
+  if (cat) {
+    html += `<div class="list" style="margin-top:12px">${cat.ideas.map(([text, duration, setting], i) => {
+      const has = texts.has(text.toLowerCase());
+      return cell({ title: esc(text), sub: esc(metaText({ duration, setting })),
+        acc: has ? `<span style="color:var(--c-quest)">${icon('check', 20, 2.4)}</span>`
+                 : `<button class="sec-add" style="color:var(--c-quest)" data-action="add-idea" data-value="${esc(cat.name)}" data-idx="${i}" aria-label="Übernehmen">${icon('plus', 18, 2.4)}</button>` });
+    }).join('')}</div>`;
+  }
+  return html;
+}
+
+// --- Eingabefenster für Aktivitäten ---
+function segmented(field, current) {
+  const opts = [[null, 'Offen'], ...ITEM_FIELDS[field].options];
+  return `<div class="segmented">${opts.map(([v, l]) =>
+    `<button type="button" class="${(current || null) === v ? 'on' : ''}" data-action="pick-seg" data-field="${field}" data-value="${v || ''}">${l}</button>`).join('')}</div>`;
+}
+const fieldRows = (d) => QUEST_SOURCES.activities.fields.map(f =>
+  `<div class="seg-row"><span>${ITEM_FIELDS[f].label}</span>${segmented(f, d[f])}</div>`).join('');
+
+function openActivitySheet(existing = null) {
+  const src = QUEST_SOURCES.activities;
+  if (existing) {
+    ui.draft = { duration: existing.duration, setting: existing.setting };
+    const body = `
+      <div class="list"><input id="act-text" class="field" type="text" value="${esc(existing.text)}" enterkeyhint="done" autocomplete="off"></div>
+      <div class="sheet-sec"><div class="list seg-list">${fieldRows(ui.draft)}</div></div>
+      <p class="sheet-note">${esc(lastDoneText('activities', existing.id).replace(/^z/, 'Z'))}</p>
+      <div class="sheet-sec"><div class="list">${cell({ title: 'Aktivität löschen', action: 'delete-activity', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div></div>`;
+    openSheet('Aktivität', body, () => {
+      const text = $('#act-text').value.trim();
+      if (!text) { shake($('#act-text').parentElement); return; }
+      Object.assign(existing, { text, duration: ui.draft.duration || null, setting: ui.draft.setting || null });
+      save(); closeSheet(); render(); toast('Gespeichert');
+    });
+    return;
+  }
+  ui.draft = { duration: null, setting: null, added: [], multi: true };
+  const body = `
+    <div class="list input-row">
+      <input id="act-text" class="field" type="text" placeholder="${esc(src.placeholder)}" enterkeyhint="send" autocomplete="off">
+      <button type="button" class="send-btn" style="background:var(--c-quest)" data-action="act-add" aria-label="Hinzufügen">${icon('arrowUp', 18, 2.6)}</button>
+    </div>
+    <p class="sheet-note">Return fügt hinzu, dann direkt die nächste Aktivität schreiben. Die Merkmale bleiben für die folgenden Einträge gewählt.</p>
+    <div class="sheet-sec"><div class="list seg-list">${fieldRows(ui.draft)}</div></div>
+    <div id="act-added"></div>`;
+  openSheet('Was tut dir gut?', body, finishActivitySheet, { saveLabel: 'Fertig', cancel: false });
+  focusNoScroll($('#act-text'));
+}
+
+function addActivity(text, duration, setting) {
+  const it = { id: uid(), text, duration: duration || null, setting: setting || null, createdAt: new Date().toISOString() };
+  data.lists.activities.push(it);
+  save();
+  return it;
+}
+
+function addActivityFromInput() {
+  const input = $('#act-text');
+  const text = input.value.trim();
+  if (!text) { shake(input.parentElement); return; }
+  const it = addActivity(text, ui.draft.duration, ui.draft.setting);
+  ui.draft.added.push(it.id);
+  input.value = '';
+  renderActAdded();
+  focusNoScroll(input);
+}
+
+function renderActAdded() {
+  const items = ui.draft.added.map(id => data.lists.activities.find(a => a.id === id)).filter(Boolean);
+  $('#act-added').innerHTML = items.length ? `<div class="sheet-sec"><div class="sheet-label">Hinzugefügt (${items.length})</div><div class="list">
+    ${items.map(a => cell({ title: esc(a.text), sub: esc(metaText(a)),
+      acc: `<button class="icon-btn" data-action="undo-activity" data-id="${a.id}" aria-label="Entfernen">${icon('xmark', 16, 2.4)}</button>` })).join('')}
+    </div></div>` : '';
+}
+
+function finishActivitySheet() {
+  const input = $('#act-text');
+  if (input && input.value.trim()) addActivityFromInput();
+  const n = ui.draft.added.length;
+  closeSheet(); render();
+  if (n) toast(`${plural(n, 'Aktivität', 'Aktivitäten')} hinzugefügt`);
+}
+
+/* =========================================================
    15. KLICKS & EINGABEN
    ========================================================= */
 document.addEventListener('click', e => {
@@ -1421,6 +1837,42 @@ document.addEventListener('click', e => {
     case 'tab': closeMenu(); ui.tab = el.dataset.tab; render(); window.scrollTo(0, 0); break;
     case 'open-menu': if ($('#menu').classList.contains('open')) closeMenu(); else { $('#menu').classList.add('open'); $('#menu-backdrop').classList.add('open'); $('#more-btn').classList.add('open'); } break;
     case 'close-menu': closeMenu(); break;
+
+    // Was mir guttut + Tages-Quest
+    case 'open-list': ui.tab = 'goodlist'; render(); window.scrollTo(0, 0); break;
+    case 'new-activity': openActivitySheet(); break;
+    case 'edit-activity': { const a = data.lists.activities.find(x => x.id === id); if (a) openActivitySheet(a); break; }
+    case 'act-add': addActivityFromInput(); break;
+    case 'pick-seg':
+      ui.draft[el.dataset.field] = value || null;
+      el.parentElement.querySelectorAll('button').forEach(b => b.classList.toggle('on', b === el));
+      break;
+    case 'undo-activity':
+      data.lists.activities = data.lists.activities.filter(a => a.id !== id);
+      ui.draft.added = ui.draft.added.filter(x => x !== id);
+      save(); renderActAdded();
+      break;
+    case 'delete-activity':
+      if (confirm('Diese Aktivität löschen? Bereits Erledigtes bleibt in deiner Zählung.')) {
+        data.lists.activities = data.lists.activities.filter(a => a.id !== id);
+        save(); closeSheet(); render();
+      }
+      break;
+    case 'insp-cat': ui.inspCat = ui.inspCat === value ? null : value; render(); break;
+    case 'add-idea': {
+      const cat = QUEST_SOURCES.activities.inspirations.find(c => c.name === value);
+      const idea = cat && cat.ideas[Number(el.dataset.idx)];
+      if (idea) { addActivity(idea[0], idea[1], idea[2]); render(); toast(`„${truncate(idea[0], 24)}“ übernommen`); }
+      break;
+    }
+    case 'quest-done': toggleQuestDone(id); break;
+    case 'quest-rate': {
+      const log = data.questLog.find(l => l.id === id);
+      if (log) { log.rating = Number(value); ui.ratingFor = null; save(); render(); toast('Danke!'); }
+      break;
+    }
+    case 'quest-rate-skip': ui.ratingFor = null; render(); break;
+    case 'quest-skip': skipDailyQuest(); break;
     case 'cal-prev': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() - 1, 1); render(); break;
     case 'cal-next': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() + 1, 1); render(); break;
     case 'select-day': ui.calSelected = day; render(); break;
@@ -1559,7 +2011,8 @@ document.addEventListener('keydown', e => {
     'grat-text': addGratitudeFromInput,
     'ci-custom': () => $('[data-action="add-emotion"]').click(),
     'g-title': () => focusNoScroll($('#g-desc')),
-    'cat-name': () => $('#cat-name').blur() };
+    'cat-name': () => $('#cat-name').blur(),
+    'act-text': () => (ui.draft.multi ? addActivityFromInput() : sheetSave && sheetSave()) };
   if (idMap[e.target.id]) { e.preventDefault(); idMap[e.target.id](); }
   if (e.target.dataset.change === 'name') { e.preventDefault(); e.target.blur(); }
 });
