@@ -221,23 +221,50 @@ input[type=date].inline { font: inherit; font-size: 17px; border: 0; background:
    ========================================================= */
 .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.3); opacity: 0; pointer-events: none; transition: opacity .3s; z-index: 40; }
 .backdrop.open { opacity: 1; pointer-events: auto; }
-.sheet { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 12px); bottom: 0;
+.sheet { position: fixed; left: 0; right: 0; top: calc(env(safe-area-inset-top) + 10px); bottom: 0;
   max-width: 680px; margin: 0 auto; background: var(--sheet-bg); border-radius: 12px 12px 0 0;
   transform: translateY(105%); transition: transform .38s cubic-bezier(.32,.72,0,1); z-index: 50;
   display: flex; flex-direction: column; overflow: hidden; }
 .sheet:not(.open) { visibility: hidden; transition: transform .38s cubic-bezier(.32,.72,0,1), visibility 0s linear .38s; }
 .sheet.open { transform: none; visibility: visible; }
+.sheet.dragging { transition: none; }
+/* Kartenstapel: die Seite rückt beim Öffnen leicht nach hinten */
+main, .bottom { transition: transform .38s cubic-bezier(.32,.72,0,1), border-radius .38s, opacity .3s; }
+html.sheet-open body { background: #000; }
+html.sheet-open main { transform: scale(.93); border-radius: 14px; background: var(--bg); overflow: hidden; }
+html.sheet-open .bottom, html.sheet-open .navbar { opacity: 0; }
+@media (prefers-color-scheme: dark) { html.sheet-open main { background: #0c0c0d; } }
+.sheet-foot { padding: 8px 16px calc(10px + env(safe-area-inset-bottom)); background: var(--sheet-bg); border-top: .5px solid var(--sep); }
+.sheet.kb .sheet-foot { padding-bottom: 8px; }
+.primary-btn { width: 100%; height: 50px; border-radius: 14px; background: var(--c, var(--accent)); color: #fff;
+  font-size: 17px; font-weight: 600; letter-spacing: -.41px; transition: opacity .2s, transform .1s; }
+.primary-btn:active { transform: scale(.98); }
+.primary-btn.dim { opacity: .4; }
+/* Gefühlsgruppen als Reiter */
+.tabs { display: flex; gap: 6px; overflow-x: auto; margin: 0 -16px 10px; padding: 0 16px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.tabs::-webkit-scrollbar, .hscroll::-webkit-scrollbar { display: none; }
+.tab { flex-shrink: 0; display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; border-radius: 999px;
+  font-size: 14px; font-weight: 600; letter-spacing: -.15px; color: var(--secondary); }
+.tab.on { background: color-mix(in srgb, var(--c, var(--accent)) 16%, transparent); color: color-mix(in srgb, var(--c, var(--accent)) 85%, var(--text)); }
+.tab i { width: 6px; height: 6px; border-radius: 3px; background: var(--c, var(--accent)); }
+.emo-area { min-height: 92px; }
+.selected-line { font-size: 13px; color: var(--secondary); margin: 10px 2px 0; letter-spacing: -.08px; min-height: 17px; }
+.selected-line b { color: var(--text); font-weight: 600; }
+.hscroll { display: flex; gap: 8px; overflow-x: auto; margin: 0 -16px; padding: 0 16px 2px; scrollbar-width: none; }
+.hscroll .chip { flex-shrink: 0; }
+.scale.sm .scale-btn { padding: 7px 0; font-size: 15px; border-radius: 9px; }
+.seg-row .scale { flex: 1; gap: 6px; }
 .grabber { width: 36px; height: 5px; border-radius: 3px; background: var(--tertiary); margin: 6px auto 0; }
-.sheet-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 6px 16px 10px; }
+.sheet-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 6px 16px 10px; touch-action: none; }
+.grabber { touch-action: none; }
 .sheet-head h2 { margin: 0; font-size: 17px; font-weight: 600; text-align: center; }
 .sheet-head button { color: var(--accent); padding: 6px 0; }
 #sheet-cancel { justify-self: start; }
-#sheet-save { justify-self: end; font-weight: 600; }
 .sheet-body { overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain;
-  padding: 4px 16px calc(40px + env(safe-area-inset-bottom)); flex: 1; }
+  padding: 4px 16px 24px; flex: 1; }
 .summary-card { background: var(--sheet-card); border-radius: 10px; padding: 14px 16px; font-size: 15px; letter-spacing: -.24px; }
 .summary-card strong { font-size: 17px; letter-spacing: -.41px; }
-.curve { display: flex; align-items: flex-end; gap: 6px; height: 76px; margin: 14px 0 8px; }
+.curve { display: flex; align-items: flex-end; gap: 6px; height: 56px; margin: 12px 0 6px; }
 .curve span { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: 4px; }
 .curve b { width: 100%; max-width: 22px; border-radius: 6px; }
 .curve small { font-size: 11px; color: var(--secondary); font-variant-numeric: tabular-nums; }
@@ -391,9 +418,10 @@ input[type=date].inline { font: inherit; font-size: 17px; border: 0; background:
   <div class="sheet-head">
     <button id="sheet-cancel" data-action="sheet-cancel">Abbrechen</button>
     <h2 id="sheet-title"></h2>
-    <button id="sheet-save" data-action="sheet-save">Sichern</button>
+    <span></span>
   </div>
   <div id="sheet-body" class="sheet-body"></div>
+  <div class="sheet-foot"><button id="sheet-save" class="primary-btn" data-action="sheet-save">Speichern</button></div>
 </div>
 
 <input type="file" id="import-file" accept=".json,application/json" hidden>
@@ -894,7 +922,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.5 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.6 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
 }
 
 /* =========================================================
@@ -904,12 +932,17 @@ let sheetSave = null;
 let sheetDismissSaves = false;
 let savedScrollY = 0;
 
-function openSheet(title, body, onSave, { saveLabel = 'Sichern', cancel = true } = {}) {
+// color: Farbe des Speichern-Buttons; dimUntil: Feld in ui.draft, das gesetzt sein muss (Button bis dahin blass)
+function openSheet(title, body, onSave, { saveLabel = 'Speichern', cancel = true, color = 'var(--accent)', dimUntil = null } = {}) {
   $('#sheet-title').textContent = title;
   $('#sheet-body').innerHTML = body;
   $('#sheet-body').scrollTop = 0;
-  $('#sheet-save').textContent = saveLabel;
-  $('#sheet-save').style.visibility = onSave ? 'visible' : 'hidden';
+  const btn = $('#sheet-save');
+  btn.textContent = saveLabel;
+  btn.style.setProperty('--c', color);
+  btn.dataset.dimUntil = dimUntil || '';
+  btn.classList.toggle('dim', !!dimUntil && !ui.draft[dimUntil]);
+  $('.sheet-foot').style.display = onSave ? '' : 'none';
   $('#sheet-cancel').style.visibility = cancel ? 'visible' : 'hidden';
   sheetSave = onSave;
   sheetDismissSaves = !cancel; // Mehrfach-Eingabe: Wegwischen = Fertig
@@ -918,9 +951,17 @@ function openSheet(title, body, onSave, { saveLabel = 'Sichern', cancel = true }
   document.body.style.position = 'fixed';
   document.body.style.top = `-${savedScrollY}px`;
   document.body.style.width = '100%';
+  $('main').style.transformOrigin = `50% ${savedScrollY + 40}px`;
+  document.documentElement.classList.add('sheet-open');
   $('#sheet').classList.add('open');
   $('#sheet').setAttribute('aria-hidden', 'false');
   $('#backdrop').classList.add('open');
+}
+
+// Speichern-Button aktivieren, sobald das Pflichtfeld (z. B. Stimmung) gesetzt ist
+function updateSaveState() {
+  const btn = $('#sheet-save'), f = btn.dataset.dimUntil;
+  btn.classList.toggle('dim', !!f && !ui.draft[f]);
 }
 
 function closeSheet() {
@@ -929,7 +970,11 @@ function closeSheet() {
   $('#sheet').setAttribute('aria-hidden', 'true');
   $('#sheet').style.height = '';
   $('#sheet').style.bottom = '';
+  $('#sheet').style.transform = '';
+  $('#sheet').classList.remove('kb', 'dragging');
   $('#backdrop').classList.remove('open');
+  $('#backdrop').style.opacity = '';
+  document.documentElement.classList.remove('sheet-open');
   document.body.style.position = '';
   document.body.style.top = '';
   document.body.style.width = '';
@@ -945,14 +990,42 @@ function focusNoScroll(el) {
 }
 
 // Sheet an den sichtbaren Bereich über der Tastatur anpassen
+// Nur wenn die Tastatur wirklich offen ist; sonst volle Höhe. offsetTop ignoriert die Einblend-Animation.
 function fitSheetToKeyboard() {
   const vv = window.visualViewport;
   const s = $('#sheet');
   if (!vv || !s.classList.contains('open')) return;
-  const top = s.getBoundingClientRect().top + vv.offsetTop;
+  const keyboard = window.innerHeight - vv.height > 120;
+  s.classList.toggle('kb', keyboard);
+  if (!keyboard) { s.style.height = ''; s.style.bottom = ''; return; }
   s.style.bottom = 'auto';
-  s.style.height = Math.max(240, vv.height + vv.offsetTop - top) + 'px';
+  s.style.height = Math.max(260, vv.height + vv.offsetTop - s.offsetTop) + 'px';
 }
+
+// Nach unten wischen (am Griff oder an der Kopfzeile) schließt das Fenster
+(function enableSwipeToClose() {
+  let startY = null, dy = 0;
+  const sheet = () => $('#sheet');
+  document.addEventListener('touchstart', e => {
+    if (!e.target.closest('.grabber, .sheet-head') || e.target.closest('button')) return;
+    startY = e.touches[0].clientY; dy = 0;
+    sheet().classList.add('dragging');
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (startY === null) return;
+    dy = Math.max(0, e.touches[0].clientY - startY);
+    sheet().style.transform = `translateY(${dy}px)`;
+    $('#backdrop').style.opacity = String(Math.max(0, 1 - dy / 400));
+  }, { passive: true });
+  document.addEventListener('touchend', () => {
+    if (startY === null) return;
+    startY = null;
+    sheet().classList.remove('dragging');
+    $('#backdrop').style.opacity = '';
+    if (dy > 110) { sheet().style.transform = ''; $('#sheet-cancel').click(); }
+    else sheet().style.transform = '';
+  });
+})();
 if (window.visualViewport) {
   visualViewport.addEventListener('resize', fitSheetToKeyboard);
   visualViewport.addEventListener('scroll', fitSheetToKeyboard);
@@ -1017,7 +1090,7 @@ function openDoneSheet(day, existing = null) {
         <input id="done-date" class="inline" type="date" value="${day || dateKey()}"></span></div>
       ${goalSelect(null)}
     </div></div>`;
-  openSheet('Erledigt', body, finishDoneSheet, { saveLabel: 'Fertig', cancel: false });
+  openSheet('Erledigt', body, finishDoneSheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-done)' });
   focusNoScroll($('#done-text'));
 }
 
@@ -1076,7 +1149,7 @@ function openDoneEdit(d) {
     const goalEl = $('#done-goal');
     Object.assign(d, { text, category: ui.draft.category || 'Sonstiges', date: $('#done-date').value || d.date, goalId: goalEl && goalEl.value ? goalEl.value : null });
     save(); closeSheet(); render(); toast('Gespeichert');
-  });
+  }, { color: 'var(--c-done)' });
 }
 
 /* =========================================================
@@ -1092,7 +1165,7 @@ function openGratitudeSheet(day) {
     </div>
     <p class="sheet-note">${isToday ? 'Heute' : esc(fmtDayLong(ui.draft.day))} · Return fügt hinzu, dann direkt weiterschreiben.</p>
     <div id="grat-list"></div>`;
-  openSheet('Dankbar für', body, finishGratitudeSheet, { saveLabel: 'Fertig', cancel: false });
+  openSheet('Dankbar für', body, finishGratitudeSheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-grat)' });
   renderGratList();
   focusNoScroll($('#grat-text'));
 }
@@ -1132,34 +1205,59 @@ function frequentEmotions(n) {
   return Object.entries(count).sort((a, b) => b[1] - a[1]).slice(0, n).map(([e]) => e);
 }
 const emoChip = e => chip(e, ui.draft.emotions.has(e), `data-action="toggle-emotion" data-value="${esc(e)}" style="--c:${emotionColor(e)}"`, `<span class="dot"></span>`);
-function emotionChips() {
-  let h = '';
-  const freq = frequentEmotions(8);
-  if (freq.length) h += `<div class="emo-group"><div class="emo-group-name">Häufig</div><div class="chips">${freq.map(emoChip).join('')}</div></div>`;
-  for (const g of EMOTION_GROUPS) h += `<div class="emo-group"><div class="emo-group-name" style="color:${g.color}">${g.name}</div><div class="chips">${g.items.map(emoChip).join('')}</div></div>`;
-  if (data.customEmotions.length) h += `<div class="emo-group"><div class="emo-group-name">Eigene</div><div class="chips">${data.customEmotions.map(emoChip).join('')}</div></div>`;
+
+// Gefühlsgruppen als Reiter: Häufig · Freude · Ruhe · … · Eigene
+function emoTabs() {
+  const tabs = [];
+  if (frequentEmotions(1).length) tabs.push({ name: 'Häufig', color: 'var(--c-feel)', items: frequentEmotions(10) });
+  EMOTION_GROUPS.forEach(g => tabs.push(g));
+  tabs.push({ name: 'Eigene', color: '#8E8E93', items: data.customEmotions, custom: true });
+  return tabs;
+}
+function renderEmoTabs() {
+  return emoTabs().map(t => {
+    const hasSel = t.name !== 'Häufig' && t.items.some(e => ui.draft.emotions.has(e));
+    return `<button type="button" class="tab ${ui.draft.emoTab === t.name ? 'on' : ''}" style="--c:${t.color}" data-action="emo-tab" data-value="${esc(t.name)}">${esc(t.name)}${hasSel ? '<i></i>' : ''}</button>`;
+  }).join('');
+}
+function renderEmoArea() {
+  const t = emoTabs().find(x => x.name === ui.draft.emoTab) || emoTabs()[0];
+  let h = `<div class="chips">${t.items.map(emoChip).join('')}</div>`;
+  if (t.custom) {
+    h = (t.items.length ? h : '') + `<div class="list input-row" style="margin-top:${t.items.length ? 10 : 0}px">
+      <input id="ci-custom" class="field" placeholder="Eigenes Gefühl hinzufügen" enterkeyhint="done" autocomplete="off">
+      <button type="button" class="send-btn" style="background:var(--c-feel)" data-action="add-emotion" aria-label="Hinzufügen">${icon('plus', 18, 2.6)}</button></div>`;
+  }
   return h;
+}
+function renderSelectedLine() {
+  const sel = [...ui.draft.emotions];
+  return sel.length ? `Ausgewählt: <b>${sel.map(esc).join(', ')}</b>` : 'Tippe an, was gerade da ist (mehrere möglich).';
+}
+function refreshEmotions() {
+  $('#emo-tabs').innerHTML = renderEmoTabs();
+  $('#ci-emotions').innerHTML = renderEmoArea();
+  $('#ci-selected').innerHTML = renderSelectedLine();
 }
 
 function openCheckinSheet(existing = null) {
   const c = existing || { mood: null, emotions: [], triggers: [], note: '' };
-  ui.draft = { mood: c.mood, emotions: new Set(c.emotions), triggers: new Set(c.triggers) };
+  ui.draft = { mood: c.mood, emotions: new Set(c.emotions), triggers: new Set(c.triggers),
+    emoTab: frequentEmotions(1).length ? 'Häufig' : EMOTION_GROUPS[0].name };
   const body = `
-    <div class="sheet-label" style="margin-top:6px">Wie geht es dir gerade?</div>
+    <div class="sheet-label" style="margin-top:4px">Wie geht es dir gerade?</div>
     <div class="scale" id="ci-moods">${scaleButtons('mood', c.mood, true)}</div>
-    <div class="sheet-sec"><div class="sheet-label">Was fühlst du? <span class="opt">(mehrere möglich)</span></div>
-      <div id="ci-emotions">${emotionChips()}</div>
-      <div class="list input-row" style="margin-top:4px">
-        <input id="ci-custom" class="field" placeholder="Eigenes Gefühl hinzufügen" enterkeyhint="done" autocomplete="off">
-        <button type="button" class="send-btn" data-action="add-emotion" aria-label="Hinzufügen">${icon('plus', 18, 2.6)}</button>
-      </div></div>
+    <div class="sheet-sec"><div class="sheet-label">Was fühlst du?</div>
+      <div class="tabs" id="emo-tabs">${renderEmoTabs()}</div>
+      <div class="emo-area" id="ci-emotions">${renderEmoArea()}</div>
+      <div class="selected-line" id="ci-selected">${renderSelectedLine()}</div></div>
     <div class="sheet-sec"><div class="sheet-label">Auslöser <span class="opt">(optional)</span></div>
-      <div class="chips">${TRIGGERS.map(t => chip(t, ui.draft.triggers.has(t), `data-action="toggle-trigger" data-value="${esc(t)}"`)).join('')}</div></div>
-    <div class="sheet-sec"><div class="sheet-label">Notiz <span class="opt">(optional)</span></div>
-      <div class="list"><textarea id="ci-note" class="field" rows="3" placeholder="Was geht dir durch den Kopf?">${esc(c.note)}</textarea></div></div>
+      <div class="hscroll">${TRIGGERS.map(t => chip(t, ui.draft.triggers.has(t), `data-action="toggle-trigger" data-value="${esc(t)}"`)).join('')}</div></div>
+    <div class="sheet-sec"><div class="list"><textarea id="ci-note" class="field" rows="2" style="min-height:72px" placeholder="Notiz (optional): Was geht dir durch den Kopf?">${esc(c.note)}</textarea></div></div>
     ${existing ? `<p class="sheet-note">Eingetragen am ${esc(fmtDayLong(dateKey(new Date(c.ts))))} um ${fmtTime(c.ts)} Uhr</p>
       <div class="sheet-sec"><div class="list">${cell({ title: 'Check-in löschen', action: 'delete-checkin', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div></div>` : ''}`;
-  openSheet(existing ? 'Check-in bearbeiten' : 'Gefühl', body, () => saveCheckin(existing));
+  openSheet(existing ? 'Check-in bearbeiten' : 'Gefühl', body, () => saveCheckin(existing),
+    { color: 'var(--c-feel)', dimUntil: 'mood', saveLabel: existing ? 'Speichern' : 'Check-in speichern' });
 }
 
 function addCustomEmotion(name) {
@@ -1171,8 +1269,8 @@ function addCustomEmotion(name) {
 
 function saveCheckin(existing) {
   if (!ui.draft.mood) { toast('Bitte zuerst die Stimmung wählen', false); shake($('#ci-moods')); $('#sheet-body').scrollTop = 0; return; }
-  const custom = $('#ci-custom').value;
-  if (custom.trim()) addCustomEmotion(custom);
+  const customEl = $('#ci-custom');
+  if (customEl && customEl.value.trim()) addCustomEmotion(customEl.value);
   const entry = { mood: ui.draft.mood, emotions: [...ui.draft.emotions], triggers: [...ui.draft.triggers], note: $('#ci-note').value.trim() };
   if (existing) Object.assign(existing, entry);
   else data.checkins.push({ id: uid(), ts: new Date().toISOString(), ...entry });
@@ -1201,12 +1299,12 @@ function openReflectionSheet(k) {
       ${grats.length ? `<div class="muted" style="margin-top:6px">Dankbar für: ${grats.map(g => esc(g.text)).join(' · ')}</div>` : ''}
     </div>
     <div class="sheet-sec"><div class="sheet-label">Gesamtstimmung des Tages</div><div class="scale" id="rf-moods">${scaleButtons('mood', r.mood, true)}</div></div>
-    <div class="sheet-sec"><div class="sheet-label">Wie war dein Tag?</div>
-      <div class="list"><textarea id="rf-text" class="field" rows="4" placeholder="Dein Fazit in ein paar Sätzen …">${esc(r.text)}</textarea></div></div>
-    <div class="sheet-sec"><div class="sheet-label">Schlafqualität <span class="opt">(optional)</span></div><div class="scale">${scaleButtons('sleep', r.sleep)}</div></div>
-    <div class="sheet-sec"><div class="sheet-label">Energie <span class="opt">(optional)</span></div><div class="scale">${scaleButtons('energy', r.energy)}</div></div>
+    <div class="sheet-sec"><div class="list"><textarea id="rf-text" class="field" rows="3" style="min-height:88px" placeholder="Wie war dein Tag? Dein Fazit in ein paar Sätzen …">${esc(r.text)}</textarea></div></div>
+    <div class="sheet-sec"><div class="sheet-label">Optional</div><div class="list seg-list">
+      <div class="seg-row"><span>Schlaf</span><div class="scale sm">${scaleButtons('sleep', r.sleep)}</div></div>
+      <div class="seg-row"><span>Energie</span><div class="scale sm">${scaleButtons('energy', r.energy)}</div></div></div></div>
     ${data.reflections[k] ? `<div class="sheet-sec"><div class="list">${cell({ title: 'Fazit löschen', action: 'delete-reflection', attrs: `data-day="${k}"`, cls: 'destructive' })}</div></div>` : ''}`;
-  openSheet('Tagesfazit', body, () => saveReflection(k));
+  openSheet('Tagesfazit', body, () => saveReflection(k), { color: 'var(--indigo)', dimUntil: 'mood', saveLabel: 'Fazit speichern' });
 }
 
 function saveReflection(k) {
@@ -1910,7 +2008,7 @@ function openActivitySheet(existing = null) {
       if (!text) { shake($('#act-text').parentElement); return; }
       Object.assign(existing, { text, duration: ui.draft.duration || null, setting: ui.draft.setting || null });
       save(); closeSheet(); render(); toast('Gespeichert');
-    });
+    }, { color: 'var(--c-quest)' });
     return;
   }
   ui.draft = { duration: null, setting: null, added: [], multi: true };
@@ -1922,7 +2020,7 @@ function openActivitySheet(existing = null) {
     <p class="sheet-note">Return fügt hinzu, dann direkt die nächste Aktivität schreiben. Die Merkmale bleiben für die folgenden Einträge gewählt.</p>
     <div class="sheet-sec"><div class="list seg-list">${fieldRows(ui.draft)}</div></div>
     <div id="act-added"></div>`;
-  openSheet('Was tut dir gut?', body, finishActivitySheet, { saveLabel: 'Fertig', cancel: false });
+  openSheet('Was tut dir gut?', body, finishActivitySheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-quest)' });
   focusNoScroll($('#act-text'));
 }
 
@@ -2022,6 +2120,7 @@ document.addEventListener('click', e => {
       const newVal = el.classList.contains('on') && field !== 'mood' ? null : v;
       ui.draft[field] = newVal;
       el.parentElement.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('on', newVal !== null && b === el));
+      updateSaveState();
       break;
     }
 
@@ -2069,9 +2168,12 @@ document.addEventListener('click', e => {
     case 'toggle-emotion': {
       const on = !ui.draft.emotions.has(value);
       if (on) ui.draft.emotions.add(value); else ui.draft.emotions.delete(value);
-      document.querySelectorAll('#ci-emotions .chip').forEach(c => { if (c.dataset.value === value) c.classList.toggle('on', on); });
+      el.classList.toggle('on', on);
+      $('#emo-tabs').innerHTML = renderEmoTabs();
+      $('#ci-selected').innerHTML = renderSelectedLine();
       break;
     }
+    case 'emo-tab': ui.draft.emoTab = value; $('#emo-tabs').innerHTML = renderEmoTabs(); $('#ci-emotions').innerHTML = renderEmoArea(); break;
     case 'toggle-trigger': {
       const on = !ui.draft.triggers.has(value);
       if (on) ui.draft.triggers.add(value); else ui.draft.triggers.delete(value);
@@ -2082,7 +2184,7 @@ document.addEventListener('click', e => {
       const input = $('#ci-custom');
       if (!input.value.trim()) { focusNoScroll(input); break; }
       addCustomEmotion(input.value); input.value = '';
-      $('#ci-emotions').innerHTML = emotionChips();
+      refreshEmotions();
       break;
     }
     case 'delete-checkin':
