@@ -699,7 +699,7 @@ const chevron = () => icon('chevron', 14, 2.6);
 // --- Heute ---
 function renderToday() {
   const k = dateKey();
-  let html = `<p class="date-sub">${esc(fmtDayLong(k))}</p>` + renderQuestCard() + renderHero(k);
+  let html = `<p class="date-sub">${esc(fmtDayLong(k))}</p>` + renderHero(k) + renderQuestCard();
   const entries = data.dones.length + data.checkins.length;
   const lb = data.settings.lastBackup;
   if (entries >= 10 && (!lb || daysSince(lb) >= 14)) {
