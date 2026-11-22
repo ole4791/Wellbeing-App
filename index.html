@@ -346,6 +346,9 @@ input[type=date].inline { font: inherit; font-size: 17px; border: 0; background:
 .rated .on { color: #FF9F0A; }
 .quest-foot { margin-top: 12px; font-size: 13px; color: var(--secondary); letter-spacing: -.08px; }
 .quest-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 12px; }
+.q-add { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; font-size: 13px; font-weight: 600; color: var(--c-quest);
+  background: color-mix(in srgb, var(--c-quest) 12%, transparent); border-radius: 999px; padding: 5px 10px 5px 8px; }
+.q-add:active { opacity: .7; }
 .link-btn.small { font-size: 15px; font-weight: 500; letter-spacing: -.24px; color: var(--c-quest); }
 .intro-card { background: var(--card); border-radius: 12px; padding: 14px 16px; font-size: 15px; line-height: 1.42; letter-spacing: -.24px; color: var(--secondary); margin-top: 18px; }
 .seg-list { padding: 4px 0; }
@@ -409,6 +412,7 @@ const ICONS = {
   more: '<circle cx="12" cy="12" r="9"/><circle cx="7.8" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="16.2" cy="12" r=".6" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   flag: '<path d="M5.5 21V4M5.5 4.5h11.5l-2.5 4 2.5 4H5.5"/>',
+  bolt: '<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>',
   sliders: '<path d="M4 7h9.5M18.5 7H20M4 17h3.5M12.5 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="10" cy="17" r="2.3"/>',
   checkCircle: '<circle cx="12" cy="12" r="9"/><path d="M8 12.3l2.8 2.8L16.2 9.8"/>',
   heart: '<path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/>',
@@ -541,7 +545,7 @@ function emptyData() {
     lists: { activities: [] }, // { id, text, duration: 'short'|'long'|null, setting: 'alone'|'together'|null, createdAt }
     quests: { daily: {} },     // 'JJJJ-MM-TT' → { source, suggestions[], skipped[] }; später weekly: { 'JJJJ-Www': … }
     questLog: [],              // { id, source, itemId, text, date, doneAt, rating 1–5|null }
-    settings: { lockEnabled: false, credentialId: null, graceMinutes: 5, lastBackup: null, name: '' },
+    settings: { lockEnabled: false, credentialId: null, graceMinutes: 5, lastBackup: null, name: '', questIdeas: true },
   };
 }
 
@@ -890,7 +894,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.4 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.5 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
 }
 
 /* =========================================================
@@ -1501,6 +1505,9 @@ document.addEventListener('visibilitychange', () => {
    'social', 'savoring', 'values', 'strengths'. Es bleibt bei
    EINER Tages-Quest; welche Liste sie speist, entscheidet
    dailyQuestSource() – heute immer 'activities'.
+
+   Die Quest mischt eigene Einträge mit neuen Ideen aus den
+   Denkanstößen (abschaltbar). Ideen haben die ID 'idea:<Text>'.
    ========================================================= */
 
 // Merkmale eines Listeneintrags (für Umschalter und Anzeige)
@@ -1529,22 +1536,93 @@ const QUEST_SOURCES = {
       'Nimm dir heute ein bisschen Zeit für dich',
     ],
     emptyTitle: 'Was tut dir gut?',
-    emptyText: 'Leg eine kleine Liste mit Dingen an, die dir guttun. Dann schlägt dir die App hier jeden Tag etwas daraus vor.',
-    // Denkanstöße: Kategorien mit Beispielideen (Merkmale vorausgefüllt)
+    emptyText: 'Hier ein paar Ideen zum Ausprobieren. Mit einer eigenen Liste werden die Vorschläge persönlicher.',
+    // Denkanstöße: Kategorien mit Ideen [Text, Dauer, Rahmen]
     inspirations: [
-      { name: 'Draußen', icon: 'sun', ideas: [['Spaziergang im Park', 'short', 'alone'], ['Sonnenuntergang anschauen', 'short', null], ['Ausflug ins Grüne', 'long', 'together'], ['Draußen im Café sitzen', 'short', null]] },
-      { name: 'Bewegung', icon: 'dumbbell', ideas: [['10 Minuten dehnen', 'short', 'alone'], ['Radtour', 'long', null], ['Schwimmen gehen', 'long', null], ['Zu Musik tanzen', 'short', 'alone']] },
-      { name: 'Kreativ', icon: 'brush', ideas: [['Zeichnen oder kritzeln', 'short', 'alone'], ['Etwas Neues kochen', 'long', null], ['Fotospaziergang', 'long', 'alone'], ['Musik machen', 'short', 'alone']] },
-      { name: 'Genuss', icon: 'cup', ideas: [['Kaffee in Ruhe trinken', 'short', 'alone'], ['Lieblingsessen kochen', 'long', null], ['Ein warmes Bad nehmen', 'short', 'alone'], ['Lieblingsalbum hören', 'short', 'alone']] },
-      { name: 'Ruhe', icon: 'moon', ideas: [['5 Minuten bewusst atmen', 'short', 'alone'], ['Ein Kapitel lesen', 'short', 'alone'], ['Ohne Handy in die Natur', 'long', 'alone'], ['Früh schlafen gehen', 'short', 'alone']] },
-      { name: 'Mit anderen', icon: 'people', ideas: [['Freund*in anrufen', 'short', 'together'], ['Gemeinsam kochen', 'long', 'together'], ['Spieleabend', 'long', 'together'], ['Spontan auf einen Kaffee treffen', 'short', 'together']] },
-      { name: 'Kostenlos', icon: 'tag', ideas: [['Bibliothek besuchen', 'long', 'alone'], ['Sterne anschauen', 'short', null], ['Alte Fotos ansehen', 'short', null], ['Picknick im Park', 'long', 'together']] },
-      { name: 'Unter 15 Minuten', icon: 'timer', ideas: [['Lieblingslied laut hören', 'short', 'alone'], ['Pflanzen gießen', 'short', 'alone'], ['Eine nette Nachricht schreiben', 'short', 'together'], ['Fenster auf, frische Luft', 'short', 'alone']] },
+      { name: 'Unter 5 Minuten', icon: 'bolt', ideas: [
+        ['Ein Glas Wasser bewusst trinken', 'short', 'alone'], ['Dreimal tief durchatmen', 'short', 'alone'],
+        ['Sich ausgiebig strecken', 'short', 'alone'], ['Lieblingslied hören und mitsingen', 'short', 'alone'],
+        ['Fenster auf, frische Luft', 'short', 'alone'], ['Ein Foto von etwas Schönem machen', 'short', 'alone'],
+        ['Kurz in die Sonne stellen', 'short', 'alone'], ['Ein Stück Schokolade bewusst genießen', 'short', 'alone'],
+        ['Hände in Ruhe eincremen', 'short', 'alone'], ['Jemandem ein Kompliment schicken', 'short', 'together'],
+        ['Aus dem Fenster schauen und Wolken beobachten', 'short', 'alone'], ['Kurz die Schultern lockern', 'short', 'alone'] ] },
+      { name: 'Unter 15 Minuten', icon: 'timer', ideas: [
+        ['Pflanzen gießen', 'short', 'alone'], ['Eine nette Nachricht schreiben', 'short', 'together'],
+        ['Einmal um den Block gehen', 'short', 'alone'], ['Tee kochen und am Fenster trinken', 'short', 'alone'],
+        ['Den Schreibtisch kurz aufräumen', 'short', 'alone'], ['Ein Gedicht lesen', 'short', 'alone'],
+        ['Eine Sprachnachricht an eine*n Freund*in', 'short', 'together'], ['Fünf Minuten kritzeln', 'short', 'alone'],
+        ['Kurze geführte Meditation', 'short', 'alone'], ['Ein Kapitel Hörbuch hören', 'short', 'alone'],
+        ['Frische Blumen kaufen', 'short', 'alone'], ['Lieblingsfotos am Handy durchschauen', 'short', 'alone'] ] },
+      { name: 'Draußen', icon: 'sun', ideas: [
+        ['Spaziergang im Park', 'short', 'alone'], ['Sonnenuntergang anschauen', 'short', null],
+        ['Mittagspause draußen verbringen', 'short', null], ['Eine neue Straße im Kiez erkunden', 'short', 'alone'],
+        ['Vögel beobachten', 'short', 'alone'], ['Draußen im Café sitzen', 'short', null],
+        ['Ausflug ins Grüne', 'long', 'together'], ['Ans Wasser fahren und am Ufer sitzen', 'long', null] ] },
+      { name: 'Bewegung', icon: 'dumbbell', ideas: [
+        ['10 Minuten dehnen', 'short', 'alone'], ['Zu Musik tanzen', 'short', 'alone'],
+        ['Treppe statt Aufzug', 'short', 'alone'], ['7-Minuten-Workout', 'short', 'alone'],
+        ['Mit dem Rad statt mit der Bahn fahren', 'short', 'alone'], ['Radtour', 'long', null],
+        ['Schwimmen gehen', 'long', null], ['Yoga-Einheit', 'long', 'alone'], ['Zusammen joggen', 'long', 'together'] ] },
+      { name: 'Kreativ', icon: 'brush', ideas: [
+        ['Zeichnen oder kritzeln', 'short', 'alone'], ['Musik machen', 'short', 'alone'],
+        ['Ein kurzes Gedicht schreiben', 'short', 'alone'], ['Playlist für die Woche zusammenstellen', 'short', 'alone'],
+        ['Eine Postkarte gestalten und verschicken', 'short', 'together'], ['Etwas Neues kochen', 'long', null],
+        ['Fotospaziergang', 'long', 'alone'], ['Etwas basteln oder reparieren', 'long', 'alone'] ] },
+      { name: 'Genuss', icon: 'cup', ideas: [
+        ['Kaffee in Ruhe trinken', 'short', 'alone'], ['Lieblingsalbum hören', 'short', 'alone'],
+        ['Frisches Obst schön anrichten', 'short', 'alone'], ['Beim Bäcker etwas Besonderes holen', 'short', 'alone'],
+        ['Eine Kerze anzünden', 'short', 'alone'], ['Ein warmes Bad nehmen', 'short', 'alone'],
+        ['Lieblingsessen kochen', 'long', null], ['Ein neues Restaurant ausprobieren', 'long', 'together'] ] },
+      { name: 'Ruhe', icon: 'moon', ideas: [
+        ['5 Minuten bewusst atmen', 'short', 'alone'], ['Ein Kapitel lesen', 'short', 'alone'],
+        ['10 Minuten einfach nichts tun', 'short', 'alone'], ['Kurzer Mittagsschlaf', 'short', 'alone'],
+        ['Body-Scan im Liegen', 'short', 'alone'], ['Früh schlafen gehen', 'short', 'alone'],
+        ['Eine Stunde ohne Handy', 'long', 'alone'], ['Ohne Handy in die Natur', 'long', 'alone'] ] },
+      { name: 'Mit anderen', icon: 'people', ideas: [
+        ['Freund*in anrufen', 'short', 'together'], ['Familie anrufen', 'short', 'together'],
+        ['Spontan auf einen Kaffee treffen', 'short', 'together'], ['Kolleg*in zum Mittagessen fragen', 'short', 'together'],
+        ['Gemeinsam spazieren gehen', 'short', 'together'], ['Gemeinsam kochen', 'long', 'together'],
+        ['Spieleabend', 'long', 'together'], ['Zusammen ins Kino', 'long', 'together'] ] },
+      { name: 'Für andere', icon: 'heart', ideas: [
+        ['Danke-Nachricht schreiben', 'short', 'together'], ['Jemandem bei etwas helfen', 'short', 'together'],
+        ['Mit Nachbar*innen plaudern', 'short', 'together'], ['Kleines Geschenk besorgen', 'short', 'alone'],
+        ['Jemanden zum Lachen bringen', 'short', 'together'], ['Kleiderschrank ausmisten und spenden', 'long', 'alone'] ] },
+      { name: 'Neugier', icon: 'book', ideas: [
+        ['Etwas nachschlagen, das dich interessiert', 'short', 'alone'], ['10 Minuten eine Sprache üben', 'short', 'alone'],
+        ['Einen Podcast anfangen', 'short', 'alone'], ['Einen kurzen Vortrag anschauen', 'short', 'alone'],
+        ['Eine Doku schauen', 'long', null], ['Ein Museum besuchen', 'long', null] ] },
+      { name: 'Kostenlos', icon: 'tag', ideas: [
+        ['Sterne anschauen', 'short', null], ['Alte Fotos ansehen', 'short', null],
+        ['Podcast beim Spazierengehen', 'short', 'alone'], ['Bibliothek besuchen', 'long', 'alone'],
+        ['Picknick im Park', 'long', 'together'], ['Über den Flohmarkt bummeln', 'long', null],
+        ['Lieblingsfilm nochmal schauen', 'long', null] ] },
     ],
   },
 };
 
 const dailyQuestSource = () => 'activities';
+const QUEST_SIZE = 3;
+
+// Alle Denkanstöße als flache Liste (ohne Doppelte) – Ideen für die Quest
+function ideaPool(source) {
+  const seen = new Set(), out = [];
+  for (const cat of QUEST_SOURCES[source].inspirations) {
+    for (const [text, duration, setting] of cat.ideas) {
+      if (seen.has(text)) continue;
+      seen.add(text);
+      out.push({ id: 'idea:' + text, text, duration, setting, idea: true, category: cat.name });
+    }
+  }
+  return out;
+}
+const isIdeaId = id => typeof id === 'string' && id.startsWith('idea:');
+const ideasEnabled = () => data.settings.questIdeas !== false;
+
+// Eintrag zu einer ID finden: eigener Listeneintrag oder Idee
+function resolveItem(source, id) {
+  if (isIdeaId(id)) return ideaPool(source).find(i => i.id === id) || null;
+  return data.lists[source].find(i => i.id === id) || null;
+}
 
 // Zufall, der nur vom Text abhängt: gleiche Eingabe → gleiches Ergebnis (0…1)
 function seeded(str) {
@@ -1585,16 +1663,18 @@ function rankItems(source, items, k) {
     .map(x => x.it);
 }
 
-// Wählt bis zu `count` Vorschläge aus der Aktivitätenliste
-function pickActivities(k, exclude, count) {
-  let pool = data.lists.activities.filter(a => !exclude.includes(a.id));
-  if (!isWeekend(k)) {
-    // Unter der Woche: kurze und solche ohne Dauer; reicht das nicht, auch längere
-    const short = pool.filter(a => a.duration !== 'long');
-    if (short.length >= Math.min(2, count)) pool = short;
-  }
-  const ranked = rankItems('activities', pool, k);
-  const out = ranked.slice(0, 2);
+// Unter der Woche nur Kurzes (bzw. ohne Dauer); reicht das nicht, auch Längeres
+function weekdayFilter(pool, k, need) {
+  if (isWeekend(k)) return pool;
+  const short = pool.filter(a => a.duration !== 'long');
+  return short.length >= Math.min(2, need) ? short : pool;
+}
+
+// Wählt bis zu `count` Vorschläge aus einer Kandidatenliste
+function pickFrom(source, candidates, k, count) {
+  if (count <= 0) return [];
+  const ranked = rankItems(source, weekdayFilter(candidates, k, count), k);
+  const out = ranked.slice(0, Math.min(2, count));
   // Abwechslung: Sind die ersten beiden gleich (allein/allein), wenn möglich etwas anderes als dritten
   if (count > 2 && ranked.length > 2) {
     const s = out.map(a => a.setting);
@@ -1604,27 +1684,57 @@ function pickActivities(k, exclude, count) {
   return out.slice(0, count).map(a => a.id);
 }
 
+function pickOwn(k, exclude, count) {
+  return pickFrom('activities', data.lists.activities.filter(a => !exclude.includes(a.id)), k, count);
+}
+function pickIdeas(k, exclude, count) {
+  if (!ideasEnabled()) return [];
+  const own = new Set(data.lists.activities.map(a => a.text.toLowerCase()));
+  const pool = ideaPool('activities').filter(i => !exclude.includes(i.id) && !own.has(i.text.toLowerCase()));
+  // Ideen: Zufall steht im Vordergrund, kürzlich gemachte rutschen nach hinten
+  return pickFrom('activities', pool, k, count);
+}
+
+// Wie viele eigene Einträge bzw. Ideen soll die Quest enthalten?
+function questMix() {
+  const own = data.lists.activities.length;
+  if (!ideasEnabled()) return { own: Math.min(QUEST_SIZE, own), ideas: 0 };
+  if (own >= QUEST_SIZE) return { own: QUEST_SIZE - 1, ideas: 1 };   // 2 eigene + 1 neue Idee
+  return { own, ideas: QUEST_SIZE - own };                            // auffüllen mit Ideen
+}
+
 // Holt die Quest des Tages; legt sie beim ersten Öffnen an und bleibt dann gleich
 function getDailyQuest(k = dateKey()) {
   const source = dailyQuestSource();
-  const items = data.lists[source];
-  if (!items.length) return null;
+  const mix = questMix();
+  if (!mix.own && !mix.ideas) return null;
   let q = data.quests.daily[k];
   let changed = false;
   if (!q || q.source !== source) { q = { source, suggestions: [], skipped: [] }; data.quests.daily[k] = q; changed = true; }
-  const ids = new Set(items.map(i => i.id));
+  // Nicht mehr vorhandene Einträge entfernen (gelöscht, Ideen abgeschaltet oder inzwischen in der Liste)
+  const ownTexts = new Set(data.lists.activities.map(a => a.text.toLowerCase()));
+  const doneIds = questLogOn(k, source).map(l => l.itemId);
   const before = q.suggestions.length;
-  q.suggestions = q.suggestions.filter(id => ids.has(id)); // gelöschte entfernen
+  q.suggestions = q.suggestions.filter(id => {
+    const it = resolveItem(source, id);
+    if (!it) return false;
+    if (isIdeaId(id) && !doneIds.includes(id) && (!ideasEnabled() || ownTexts.has(it.text.toLowerCase()))) return false;
+    return true;
+  });
   if (q.suggestions.length !== before) changed = true;
-  const target = Math.min(3, items.length);
-  if (q.suggestions.length < target) {
-    let extra = pickActivities(k, [...q.suggestions, ...q.skipped], target - q.suggestions.length);
-    if (!extra.length) extra = pickActivities(k, q.suggestions, target - q.suggestions.length);
-    q.suggestions.push(...extra);
-    changed = true;
-  }
+  // Auffüllen
+  const haveOwn = q.suggestions.filter(id => !isIdeaId(id)).length;
+  const haveIdeas = q.suggestions.length - haveOwn;
+  const room = Math.max(0, mix.own + mix.ideas - q.suggestions.length); // nie mehr als QUEST_SIZE
+  const exclude = [...q.suggestions, ...q.skipped];
+  const needOwn = Math.max(0, Math.min(mix.own - haveOwn, room));
+  let addOwn = pickOwn(k, exclude, needOwn);
+  if (addOwn.length < needOwn) addOwn = pickOwn(k, q.suggestions, needOwn);
+  const needIdeas = Math.max(0, Math.min(mix.ideas - haveIdeas + (needOwn - addOwn.length), room - addOwn.length));
+  const addIdeas = pickIdeas(k, exclude, needIdeas);
+  if (addOwn.length || addIdeas.length) { q.suggestions.push(...addOwn, ...addIdeas); changed = true; }
   if (changed) save();
-  return q;
+  return q.suggestions.length ? q : null;
 }
 
 // „Passt heute nicht“: offene Vorschläge gegen neue tauschen (nur für heute)
@@ -1637,10 +1747,16 @@ function skipDailyQuest() {
   if (!open.length) return;
   q.skipped = [...new Set([...q.skipped, ...open])];
   const keep = q.suggestions.filter(id => doneIds.includes(id));
-  let next = pickActivities(k, [...keep, ...q.skipped], open.length);
-  if (!next.length) { q.skipped = [...open]; next = pickActivities(k, [...keep, ...open], open.length); } // Runde von vorn
-  if (!next.length) { toast('Mehr Ideen? Ergänze deine Liste.', false); return; }
-  q.suggestions = [...keep, ...next];
+  const needOwn = open.filter(id => !isIdeaId(id)).length;
+  const needIdeas = open.length - needOwn;
+  let own = pickOwn(k, [...keep, ...q.skipped], needOwn);
+  if (own.length < needOwn) { // eigene Liste einmal durch → Runde von vorn
+    q.skipped = q.skipped.filter(isIdeaId);
+    own = pickOwn(k, [...keep, ...open], needOwn);
+  }
+  const ideas = pickIdeas(k, [...keep, ...q.skipped], needIdeas + (needOwn - own.length));
+  if (!own.length && !ideas.length) { toast('Mehr Ideen? Ergänze deine Liste.', false); return; }
+  q.suggestions = [...keep, ...own, ...ideas];
   save(); render();
 }
 
@@ -1653,11 +1769,22 @@ function toggleQuestDone(itemId) {
     save(); render(); toast('Zurückgenommen', false);
     return;
   }
-  const item = data.lists[source].find(i => i.id === itemId);
+  const item = resolveItem(source, itemId);
   const log = { id: uid(), source, itemId, text: item ? item.text : '', date: k, doneAt: new Date().toISOString(), rating: null };
   data.questLog.push(log);
   ui.ratingFor = log.id;
   save(); render();
+}
+
+// Idee aus der Quest in die eigene Liste übernehmen (Quest + Verlauf zeigen dann auf den neuen Eintrag)
+function ideaToList(ideaId) {
+  const idea = resolveItem('activities', ideaId);
+  if (!idea) return;
+  const it = addActivity(idea.text, idea.duration, idea.setting);
+  Object.values(data.quests.daily).forEach(q => { q.suggestions = q.suggestions.map(id => (id === ideaId ? it.id : id)); });
+  data.questLog.forEach(l => { if (l.itemId === ideaId) l.itemId = it.id; });
+  save(); render();
+  toast('In deine Liste übernommen');
 }
 
 const starIcon = (filled, size = 24) =>
@@ -1671,27 +1798,27 @@ function renderQuestCard() {
   const src = QUEST_SOURCES[source];
   const label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest</div>`;
   const q = getDailyQuest(k);
+  const hasOwn = data.lists[source].length > 0;
 
   if (!q) {
     return `<div class="quest">${label}
       <div class="quest-title">${esc(src.emptyTitle)}</div>
-      <div class="quest-sub">${esc(src.emptyText)}</div>
+      <div class="quest-sub">Leg eine kleine Liste mit Dingen an, die dir guttun. Dann schlägt dir die App hier jeden Tag etwas daraus vor.</div>
       <button class="quest-cta" data-action="open-list">${icon('plus', 18, 2.4)}Liste anlegen</button></div>`;
   }
 
-  const items = data.lists[source];
   const logs = questLogOn(k, source);
   const doneIds = logs.map(l => l.itemId);
   const anyDone = q.suggestions.some(id => doneIds.includes(id));
   const allDone = q.suggestions.every(id => doneIds.includes(id));
-  const title = src.questTitles[Math.floor(seeded('title' + k) * src.questTitles.length)];
+  const title = hasOwn ? src.questTitles[Math.floor(seeded('title' + k) * src.questTitles.length)] : src.emptyTitle;
   const n = monthQuestCount(k);
 
   const rows = q.suggestions.map(id => {
-    const it = items.find(i => i.id === id);
+    const it = resolveItem(source, id);
     if (!it) return '';
     const log = logs.find(l => l.itemId === id);
-    const meta = metaText(it);
+    const meta = [it.idea ? 'Neue Idee' : '', metaText(it)].filter(Boolean).join(' · ');
     let extra = '';
     if (log && ui.ratingFor === log.id && !log.rating) {
       extra = `<div class="rate"><span>Wie war's?</span><span class="stars">${[1, 2, 3, 4, 5].map(v =>
@@ -1700,23 +1827,25 @@ function renderQuestCard() {
     } else if (log && log.rating) {
       extra = `<div class="rated">${[1, 2, 3, 4, 5].map(v => `<span class="${v <= log.rating ? 'on' : ''}">${starIcon(v <= log.rating, 14)}</span>`).join('')}</div>`;
     }
-    return `<div class="q-item ${log ? 'done' : ''}">
+    const addBtn = it.idea ? `<button class="q-add" data-action="idea-to-list" data-id="${esc(id)}" aria-label="In meine Liste">${icon('plus', 15, 2.4)}Liste</button>` : '';
+    return `<div class="q-item ${log ? 'done' : ''} ${it.idea ? 'idea' : ''}">
       <div class="q-row">
-        <button class="q-check" data-action="quest-done" data-id="${id}" aria-label="${log ? 'Zurücknehmen' : 'Erledigt'}">${log ? icon('check', 16, 3) : ''}</button>
-        <span class="q-text"><span>${esc(it.text)}</span>${meta ? `<span class="q-meta">${esc(meta)}</span>` : ''}</span>
+        <button class="q-check" data-action="quest-done" data-id="${esc(id)}" aria-label="${log ? 'Zurücknehmen' : 'Erledigt'}">${log ? icon('check', 16, 3) : ''}</button>
+        <span class="q-text"><span>${esc(it.text)}</span>${meta ? `<span class="q-meta">${esc(meta)}</span>` : ''}</span>${addBtn}
       </div>${extra}</div>`;
   }).join('');
 
+  const canSkip = !allDone;
   return `<div class="quest">${label}
     <div class="quest-title">${esc(anyDone ? 'Schön, dass du dir Zeit dafür genommen hast' : title)}</div>
-    ${anyDone ? `<div class="quest-sub">Wenn du magst, ist noch mehr drin.</div>` : ''}
+    ${anyDone ? `<div class="quest-sub">Wenn du magst, ist noch mehr drin.</div>` : !hasOwn ? `<div class="quest-sub">${esc(src.emptyText)}</div>` : ''}
     <div class="q-items">${rows}</div>
     <div class="quest-foot">
       <span>${n ? `Diesen Monat ${n} ${n === 1 ? 'Ding' : 'Dinge'} gemacht, die dir guttun` : 'Jedes Mal zählt, ganz ohne Druck.'}</span>
     </div>
     <div class="quest-actions">
-      ${!allDone && items.length > q.suggestions.length ? `<button class="link-btn small" data-action="quest-skip">Passt heute nicht, anderer Vorschlag</button>` : '<span></span>'}
-      <button class="link-btn small" data-action="open-list">Liste</button>
+      ${canSkip ? `<button class="link-btn small" data-action="quest-skip">Passt heute nicht, anderer Vorschlag</button>` : '<span></span>'}
+      <button class="link-btn small" data-action="open-list">${hasOwn ? 'Liste' : 'Liste anlegen'}</button>
     </div></div>`;
 }
 
@@ -1735,7 +1864,13 @@ function renderGoodList() {
       acc: chevron(), action: 'edit-activity', attrs: `data-id="${it.id}"` });
   }).join('') : emptyCell('Noch leer. Leg los oder lass dich unten inspirieren.')}</div>`;
 
-  html += secHead('Denkanstöße');
+  html += `<div class="list" style="margin-top:12px">
+    <div class="cell"><span class="cell-lead">${badge('sparkles', 'var(--c-quest)')}</span><span class="cell-body"><span class="cell-text">
+      <span class="cell-title">Neue Ideen in der Quest</span><span class="cell-sub">Eine Idee aus den Denkanstößen pro Tag zum Ausprobieren</span></span>
+      <input type="checkbox" class="switch" data-change="quest-ideas" ${ideasEnabled() ? 'checked' : ''} aria-label="Neue Ideen in der Quest"></span></div></div>`;
+
+  const total = ideaPool(source).length;
+  html += secHead('Denkanstöße', total);
   html += `<p class="group-foot" style="margin:-2px 4px 10px">Tippe eine Kategorie an und übernimm Ideen mit einem Tipp.</p>`;
   html += `<div class="chips">${src.inspirations.map(c => `
     <button type="button" class="chip ${ui.inspCat === c.name ? 'on' : ''}" style="--c:var(--c-quest)" data-action="insp-cat" data-value="${esc(c.name)}">
@@ -1768,7 +1903,7 @@ function openActivitySheet(existing = null) {
     const body = `
       <div class="list"><input id="act-text" class="field" type="text" value="${esc(existing.text)}" enterkeyhint="done" autocomplete="off"></div>
       <div class="sheet-sec"><div class="list seg-list">${fieldRows(ui.draft)}</div></div>
-      <p class="sheet-note">${esc(lastDoneText('activities', existing.id).replace(/^z/, 'Z'))}</p>
+      <p class="sheet-note">${esc(lastDoneText('activities', existing.id).replace(/^z/, 'Z').replace(/^n/, 'N'))}</p>
       <div class="sheet-sec"><div class="list">${cell({ title: 'Aktivität löschen', action: 'delete-activity', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div></div>`;
     openSheet('Aktivität', body, () => {
       const text = $('#act-text').value.trim();
@@ -1873,6 +2008,7 @@ document.addEventListener('click', e => {
     }
     case 'quest-rate-skip': ui.ratingFor = null; render(); break;
     case 'quest-skip': skipDailyQuest(); break;
+    case 'idea-to-list': ideaToList(id); break;
     case 'cal-prev': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() - 1, 1); render(); break;
     case 'cal-next': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() + 1, 1); render(); break;
     case 'select-day': ui.calSelected = day; render(); break;
@@ -2020,6 +2156,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('change', e => {
   const t = e.target;
   if (t.dataset.change === 'name') { data.settings.name = t.value.trim(); save(); }
+  if (t.dataset.change === 'quest-ideas') { data.settings.questIdeas = t.checked; save(); render(); }
   if (t.dataset.change === 'grace') { data.settings.graceMinutes = Number(t.value); save(); }
   if (t.dataset.change === 'lock') { if (t.checked) enableLock(); else disableLock(); }
   if (t.dataset.change === 'cat-visible') {
