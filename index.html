@@ -269,6 +269,25 @@ html.sheet-open .bottom, html.sheet-open .navbar { opacity: 0; }
 .curve b { width: 100%; max-width: 22px; border-radius: 6px; }
 .curve small { font-size: 11px; color: var(--secondary); font-variant-numeric: tabular-nums; }
 .muted { color: var(--secondary); }
+/* Tagesrückblick */
+.rv-card { background: var(--sheet-card); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px; font-size: 15px; letter-spacing: -.24px; }
+.rv-head { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .1px; color: var(--c); margin-bottom: 6px; }
+.rv-row { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; }
+.rv-time { color: var(--secondary); font-size: 13px; font-variant-numeric: tabular-nums; width: 38px; flex-shrink: 0; }
+.rv-emo { font-size: 16px; }
+.rv-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--c); flex-shrink: 0; transform: translateY(-2px); }
+.rv-empty, .rv-more { color: var(--secondary); font-size: 14px; }
+.rv-card .curve { height: 44px; margin: 4px 0 8px; }
+/* Hilfe in Eingabefenstern */
+.help-btn { justify-self: end; width: 32px; height: 32px; border-radius: 16px; display: flex; align-items: center; justify-content: center; color: var(--c, var(--accent)); }
+.help-btn[hidden] { display: none; }
+.help-btn:active, .help-btn.on { background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent); }
+.help-card { background: color-mix(in srgb, var(--c, var(--accent)) 10%, var(--sheet-card)); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; font-size: 15px; letter-spacing: -.24px; line-height: 1.38; }
+.help-card[hidden] { display: none; }
+.help-card strong { display: block; margin-bottom: 4px; }
+.help-card ul { margin: 0; padding-left: 18px; }
+.help-card li { margin: 3px 0; }
+.help-card .tip { margin-top: 8px; color: var(--secondary); font-size: 14px; }
 
 /* =========================================================
    7. KALENDER
@@ -418,7 +437,7 @@ html.sheet-open .bottom, html.sheet-open .navbar { opacity: 0; }
   <div class="sheet-head">
     <button id="sheet-cancel" data-action="sheet-cancel">Abbrechen</button>
     <h2 id="sheet-title"></h2>
-    <span></span>
+    <button id="sheet-help" class="help-btn" data-action="toggle-help" aria-label="Hilfe und Beispiele" hidden></button>
   </div>
   <div id="sheet-body" class="sheet-body"></div>
   <div class="sheet-foot"><button id="sheet-save" class="primary-btn" data-action="sheet-save">Speichern</button></div>
@@ -439,6 +458,7 @@ const ICONS = {
   target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   more: '<circle cx="12" cy="12" r="9"/><circle cx="7.8" cy="12" r=".6" fill="currentColor"/><circle cx="12" cy="12" r=".6" fill="currentColor"/><circle cx="16.2" cy="12" r=".6" fill="currentColor"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  bulb: '<path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.5 1.1 1.3 1.1 2.1v.1h5v-.1c0-.8.4-1.6 1.1-2.1A6 6 0 0 0 12 3z"/>',
   flag: '<path d="M5.5 21V4M5.5 4.5h11.5l-2.5 4 2.5 4H5.5"/>',
   bolt: '<path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z"/>',
   sliders: '<path d="M4 7h9.5M18.5 7H20M4 17h3.5M12.5 17H20"/><circle cx="16" cy="7" r="2.3"/><circle cx="10" cy="17" r="2.3"/>',
@@ -535,6 +555,30 @@ const LIFE_AREAS = ['Gesundheit', 'Beziehungen', 'Karriere', 'Persönliches', 'F
 const GOAL_STATUS = { active: 'Aktiv', done: 'Erreicht', paused: 'Pausiert' };
 const GRAT_COLOR = 'var(--c-grat)';
 
+// Hilfsfragen und Beispiele (über das Glühbirnen-Symbol in den Eingabefenstern)
+const HELP = {
+  done: `<strong>Was zählt als Done?</strong><ul>
+    <li>Alles, auch Kleines: aufgestanden, Wäsche gemacht, eine Mail beantwortet.</li>
+    <li>Was hast du heute für dich getan? Z. B. Pause gemacht, früh ins Bett.</li>
+    <li>Was hast du geschafft, obwohl es schwer war?</li>
+    <li>Was hast du für andere getan?</li>
+    <li>Welche Entscheidung hast du getroffen? Z. B. „mich krankgemeldet“.</li></ul>
+    <div class="tip">An schweren Tagen sind gerade die kleinen Dinge echte Erfolge.</div>`,
+  gratitude: `<strong>Hilfsfragen</strong><ul>
+    <li>Wer hat dir heute gutgetan, und womit genau?</li>
+    <li>Welcher kleine Moment war schön? Ein Licht, ein Geruch, ein Lächeln.</li>
+    <li>Was lief heute besser als erwartet?</li>
+    <li>Was hältst du oft für selbstverständlich?</li>
+    <li>Wofür kannst du dir selbst danken?</li></ul>
+    <div class="tip">Konkret wirkt stärker als allgemein: „Phil hat Karten besorgt“ statt „meine Freunde“.</div>`,
+  feeling: `<strong>So kannst du in dich hineinfühlen</strong><ul>
+    <li>Halte kurz inne: Wo im Körper spürst du gerade etwas? Enge, Wärme, Unruhe, Schwere?</li>
+    <li>Wenn das Gefühl ein Wort hätte, welches wäre es?</li>
+    <li>Mehrere Gefühle dürfen gleichzeitig da sein, auch widersprüchliche.</li>
+    <li>Unsicher? Wähle die Gruppe, die am nächsten kommt, und schau dort genauer.</li></ul>
+    <div class="tip">Es gibt kein Richtig oder Falsch. Auch unangenehme Gefühle dürfen sein, und sie gehen vorüber.</div>`,
+};
+
 // Kleine Impulse für die Startseite (wechseln täglich)
 const PROMPTS = [
   'Was hat dir heute Energie gegeben?',
@@ -564,7 +608,7 @@ function emptyData() {
     dones: [],        // { id, text, category, date, goalId, createdAt }
     checkins: [],     // { id, ts, mood, emotions[], triggers[], note }
     gratitude: [],    // { id, text, date, createdAt }
-    reflections: {},  // 'JJJJ-MM-TT' → { mood, text, updatedAt } (ältere Einträge können noch sleep/energy enthalten)
+    reflections: {},  // 'JJJJ-MM-TT' → { mood|null, text (Mitnehmen), lookForward (Vorfreude), updatedAt } (ältere evtl. sleep/energy)
     goals: [],
     favorites: [],    // { id, text, category, goalId }
     customEmotions: [],
@@ -649,12 +693,12 @@ const visibleCategories = () => data.categories.filter(c => !c.hidden);
 const donesOn = k => data.dones.filter(d => d.date === k).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 const checkinsOn = k => data.checkins.filter(c => dateKey(new Date(c.ts)) === k).sort((a, b) => a.ts.localeCompare(b.ts));
 const gratitudeOn = k => data.gratitude.filter(g => g.date === k).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+// Tagesstimmung: aus den Check-ins (Momentaufnahmen); nur ohne Check-ins aus dem Tagesrückblick
 function dayMood(k) {
-  const r = data.reflections[k];
-  if (r && r.mood) return r.mood;
   const cs = checkinsOn(k);
-  if (!cs.length) return null;
-  return Math.round(cs.reduce((s, c) => s + c.mood, 0) / cs.length);
+  if (cs.length) return Math.round(cs.reduce((s, c) => s + c.mood, 0) / cs.length);
+  const r = data.reflections[k];
+  return r && r.mood ? r.mood : null;
 }
 
 let toastTimer;
@@ -747,7 +791,9 @@ function renderHero(k) {
   const greet = h < 5 ? 'Gute Nacht' : h < 11 ? 'Guten Morgen' : h < 17 ? 'Hallo' : h < 22 ? 'Guten Abend' : 'Gute Nacht';
   const name = (data.settings.name || '').trim();
   const dayOfYear = Math.floor((parseKey(k) - new Date(parseKey(k).getFullYear(), 0, 0)) / 86400000);
-  const prompt = PROMPTS[dayOfYear % PROMPTS.length];
+  const yk = (() => { const d = parseKey(k); d.setDate(d.getDate() - 1); return dateKey(d); })();
+  const forward = data.reflections[yk] && data.reflections[yk].lookForward;
+  const prompt = forward ? `Gestern hast du dich gefreut auf: ${forward}` : PROMPTS[dayOfYear % PROMPTS.length];
   const mood = dayMood(k);
 
   const stat = (c, ic, value, label) => `<div class="stat" style="--c:${c}"><div class="stat-top">${value}${icon(ic, 18, 2)}</div><small>${label}</small></div>`;
@@ -796,16 +842,16 @@ function renderDay(k, isToday) {
     acc: chevron(), action: 'edit-checkin', attrs: `data-id="${c.id}"`,
   })).join('') : emptyCell(isToday ? 'Wie fühlst du dich gerade?' : 'Kein Check-in an diesem Tag.')}</div>`;
 
-  html += secHead('Tagesfazit');
+  html += secHead('Tagesrückblick');
   if (r) {
     html += `<div class="list">${cell({
-      lead: `<span class="emoji-lead">${MOODS[r.mood - 1].emoji}</span>`,
-      title: `Gesamtstimmung ${r.mood} von 5`,
-      sub: r.text ? esc(truncate(r.text, 120)) : '',
+      lead: r.mood ? `<span class="emoji-lead">${MOODS[r.mood - 1].emoji}</span>` : badge('moon', 'var(--indigo)'),
+      title: r.text ? esc(truncate(r.text, 90)) : 'Rückblick',
+      sub: r.lookForward ? 'Vorfreude: ' + esc(truncate(r.lookForward, 80)) : '',
       acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`,
     })}</div>`;
   } else {
-    html += `<div class="list">${cell({ lead: badge('moon', 'var(--indigo)'), title: 'Tagesfazit ziehen', acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`, cls: 'action' })}</div>`;
+    html += `<div class="list">${cell({ lead: badge('moon', 'var(--indigo)'), title: 'Auf den Tag zurückblicken', acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`, cls: 'action' })}</div>`;
   }
   return html;
 }
@@ -907,7 +953,7 @@ function renderMore() {
 
     <div class="group-label">Erinnerungen</div>
     <div class="list">${cell({ lead: badge('bell', '#FF3B30'), title: 'So richtest du Erinnerungen ein',
-      sub: '1. Erinnerungen-App öffnen, neue Erinnerung „Wie fühlst du dich?“<br>2. Datum &amp; Uhrzeit aktivieren, Uhrzeit wählen<br>3. Wiederholen → Täglich<br>4. Für weitere Zeiten wiederholen, abends „Tagesfazit“' })}</div>
+      sub: '1. Erinnerungen-App öffnen, neue Erinnerung „Wie fühlst du dich?“<br>2. Datum &amp; Uhrzeit aktivieren, Uhrzeit wählen<br>3. Wiederholen → Täglich<br>4. Für weitere Zeiten wiederholen, abends „Tagesrückblick“' })}</div>
     <p class="group-foot">Web-Apps können auf dem iPhone keine Erinnerungen planen, daher über Apples Erinnerungen-App.</p>
 
     <div class="group-label">Export &amp; Backup</div>
@@ -921,7 +967,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.7 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.8 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
 }
 
 /* =========================================================
@@ -932,9 +978,15 @@ let sheetDismissSaves = false;
 let savedScrollY = 0;
 
 // color: Farbe des Speichern-Buttons; dimUntil: Feld in ui.draft, das gesetzt sein muss (Button bis dahin blass)
-function openSheet(title, body, onSave, { saveLabel = 'Speichern', cancel = true, color = 'var(--accent)', dimUntil = null } = {}) {
+function openSheet(title, body, onSave, { saveLabel = 'Speichern', cancel = true, color = 'var(--accent)', dimUntil = null, help = null } = {}) {
   $('#sheet-title').textContent = title;
-  $('#sheet-body').innerHTML = body;
+  // Hilfe: kleines Glühbirnen-Symbol oben rechts blendet Hilfsfragen/Beispiele ein
+  const helpBtn = $('#sheet-help');
+  helpBtn.hidden = !help;
+  helpBtn.classList.remove('on');
+  helpBtn.style.setProperty('--c', color);
+  helpBtn.innerHTML = icon('bulb', 21, 1.9);
+  $('#sheet-body').innerHTML = (help ? `<div class="help-card" id="help-card" style="--c:${color}" hidden>${help}</div>` : '') + body;
   $('#sheet-body').scrollTop = 0;
   const btn = $('#sheet-save');
   btn.textContent = saveLabel;
@@ -1089,7 +1141,7 @@ function openDoneSheet(day, existing = null) {
         <input id="done-date" class="inline" type="date" value="${day || dateKey()}"></span></div>
       ${goalSelect(null)}
     </div></div>`;
-  openSheet('Erledigt', body, finishDoneSheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-done)' });
+  openSheet('Erledigt', body, finishDoneSheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-done)', help: HELP.done });
   focusNoScroll($('#done-text'));
 }
 
@@ -1164,7 +1216,7 @@ function openGratitudeSheet(day) {
     </div>
     <p class="sheet-note">${isToday ? 'Heute' : esc(fmtDayLong(ui.draft.day))} · Return fügt hinzu, dann direkt weiterschreiben.</p>
     <div id="grat-list"></div>`;
-  openSheet('Dankbar für', body, finishGratitudeSheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-grat)' });
+  openSheet('Dankbar für', body, finishGratitudeSheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-grat)', help: HELP.gratitude });
   renderGratList();
   focusNoScroll($('#grat-text'));
 }
@@ -1256,7 +1308,7 @@ function openCheckinSheet(existing = null) {
     ${existing ? `<p class="sheet-note">Eingetragen am ${esc(fmtDayLong(dateKey(new Date(c.ts))))} um ${fmtTime(c.ts)} Uhr</p>
       <div class="sheet-sec"><div class="list">${cell({ title: 'Check-in löschen', action: 'delete-checkin', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div></div>` : ''}`;
   openSheet(existing ? 'Check-in bearbeiten' : 'Gefühl', body, () => saveCheckin(existing),
-    { color: 'var(--c-feel)', dimUntil: 'mood', saveLabel: existing ? 'Speichern' : 'Check-in speichern' });
+    { color: 'var(--c-feel)', dimUntil: 'mood', saveLabel: existing ? 'Speichern' : 'Check-in speichern', help: HELP.feeling });
 }
 
 function addCustomEmotion(name) {
@@ -1281,33 +1333,48 @@ function saveCheckin(existing) {
    10. TAGESFAZIT
    ========================================================= */
 function openReflectionSheet(k) {
-  const r = data.reflections[k] || { mood: null, text: '' };
-  ui.draft = { mood: r.mood };
+  const r = data.reflections[k] || { mood: null, text: '', lookForward: '' };
+  ui.draft = { mood: r.mood || null };
   const cis = checkinsOn(k), dones = donesOn(k), grats = gratitudeOn(k);
-  const avg = cis.length ? (cis.reduce((s, c) => s + c.mood, 0) / cis.length).toFixed(1).replace('.', ',') : null;
-  const emoCount = {};
-  cis.forEach(c => c.emotions.forEach(e => { emoCount[e] = (emoCount[e] || 0) + 1; }));
-  const topEmos = Object.entries(emoCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+  const isToday = k === dateKey();
+  const MAX = 5;
+  const more = (n) => (n > MAX ? `<div class="rv-more">+ ${n - MAX} weitere</div>` : '');
+
+  // Rückblick: Gefühle (als Momente), Dankbarkeit, Dones – gleichrangig
+  const moments = cis.length ? `
+      <div class="curve">${cis.map(c => `<span><b style="height:${c.mood * 20}%;background:${MOOD_COLORS[c.mood]}"></b><small>${fmtTime(c.ts)}</small></span>`).join('')}</div>
+      ${cis.map(c => `<div class="rv-row"><span class="rv-time">${fmtTime(c.ts)}</span><span class="rv-emo">${MOODS[c.mood - 1].emoji}</span><span>${c.emotions.length ? c.emotions.map(esc).join(', ') : `Stimmung ${c.mood} von 5`}</span></div>`).join('')}`
+    : `<div class="rv-empty">Keine Gefühls-Check-ins ${isToday ? 'heute' : 'an diesem Tag'}.</div>`;
+  const list = (items, empty) => items.length
+    ? items.slice(0, MAX).map(t => `<div class="rv-row"><span class="rv-dot"></span><span>${esc(t)}</span></div>`).join('') + more(items.length)
+    : `<div class="rv-empty">${empty}</div>`;
 
   const body = `
-    <div class="summary-card">
-      <strong>${esc(fmtDayLong(k))}</strong><br>
-      <span class="muted">${plural(dones.length, 'Done', 'Dones')} · ${plural(cis.length, 'Check-in', 'Check-ins')}${avg ? ` · Ø Stimmung ${avg}` : ''}</span>
-      ${cis.length ? `<div class="curve">${cis.map(c => `<span><b style="height:${c.mood * 20}%;background:${MOOD_COLORS[c.mood]}"></b><small>${fmtTime(c.ts)}</small></span>`).join('')}</div>` : ''}
-      ${topEmos.length ? `<div class="muted" style="margin-top:6px">Gefühle: ${topEmos.map(([e, n]) => esc(e) + (n > 1 ? ` (${n}×)` : '')).join(', ')}</div>` : ''}
-      ${grats.length ? `<div class="muted" style="margin-top:6px">Dankbar für: ${grats.map(g => esc(g.text)).join(' · ')}</div>` : ''}
-    </div>
-    <div class="sheet-sec"><div class="sheet-label">Gesamtstimmung des Tages</div><div class="scale" id="rf-moods">${scaleButtons('mood', r.mood, true)}</div></div>
-    <div class="sheet-sec"><div class="list"><textarea id="rf-text" class="field" rows="3" style="min-height:88px" placeholder="Wie war dein Tag? Dein Fazit in ein paar Sätzen …">${esc(r.text)}</textarea></div></div>
-    ${data.reflections[k] ? `<div class="sheet-sec"><div class="list">${cell({ title: 'Fazit löschen', action: 'delete-reflection', attrs: `data-day="${k}"`, cls: 'destructive' })}</div></div>` : ''}`;
-  openSheet('Tagesfazit', body, () => saveReflection(k), { color: 'var(--indigo)', dimUntil: 'mood', saveLabel: 'Fazit speichern' });
+    <div class="sheet-note" style="margin:0 2px 10px;font-size:15px;color:var(--text)"><strong>${esc(fmtDayLong(k))}</strong></div>
+    <div class="rv-card" style="--c:var(--c-feel)"><div class="rv-head">${icon('heart', 16, 2.2)}Dein Tag in Momenten</div>${moments}</div>
+    <div class="rv-card" style="--c:var(--c-grat)"><div class="rv-head">${icon('sparkles', 16, 2.2)}Dankbar für</div>${list(grats.map(g => g.text), 'Noch nichts eingetragen.')}</div>
+    <div class="rv-card" style="--c:var(--c-done)"><div class="rv-head">${icon('checkCircle', 16, 2.2)}Erledigt</div>${list(dones.map(d => d.text), 'Noch nichts eingetragen.')}</div>
+    <div class="sheet-sec"><div class="sheet-label">Was nimmst du aus dem Tag mit?</div>
+      <div class="list"><textarea id="rf-text" class="field" rows="2" style="min-height:72px" placeholder="Ein Gedanke, ein Moment, eine Erkenntnis …">${esc(r.text || '')}</textarea></div></div>
+    <div class="sheet-sec"><div class="sheet-label">Worauf freust du dich morgen?</div>
+      <div class="list"><textarea id="rf-forward" class="field" rows="2" style="min-height:60px" placeholder="Auch Kleinigkeiten zählen …">${esc(r.lookForward || '')}</textarea></div></div>
+    <div class="sheet-sec"><div class="sheet-label">Gesamtstimmung <span class="opt">(optional)</span></div><div class="scale" id="rf-moods">${scaleButtons('mood', r.mood, true)}</div></div>
+    ${data.reflections[k] ? `<div class="sheet-sec"><div class="list">${cell({ title: 'Rückblick löschen', action: 'delete-reflection', attrs: `data-day="${k}"`, cls: 'destructive' })}</div></div>` : ''}`;
+  openSheet('Tagesrückblick', body, () => saveReflection(k), { color: 'var(--indigo)', saveLabel: 'Rückblick speichern' });
 }
 
 function saveReflection(k) {
-  if (!ui.draft.mood) { toast('Bitte die Gesamtstimmung wählen', false); shake($('#rf-moods')); return; }
-  data.reflections[k] = { ...(data.reflections[k] || {}), mood: ui.draft.mood, text: $('#rf-text').value.trim(), updatedAt: new Date().toISOString() };
+  const text = $('#rf-text').value.trim();
+  const lookForward = $('#rf-forward').value.trim();
+  const mood = ui.draft.mood || null;
+  if (!text && !lookForward && !mood) {
+    // Nichts eingetragen: vorhandenes Fazit entfernen bzw. einfach schließen
+    if (data.reflections[k]) { delete data.reflections[k]; save(); }
+    closeSheet(); render(); return;
+  }
+  data.reflections[k] = { ...(data.reflections[k] || {}), mood, text, lookForward, updatedAt: new Date().toISOString() };
   save(); closeSheet(); render();
-  toast('Tagesfazit gespeichert');
+  toast('Rückblick gespeichert');
 }
 
 /* =========================================================
@@ -1424,7 +1491,7 @@ function buildMarkdown(fromKey) {
   md += `- **Erledigt**: Done-Liste (was geschafft wurde, auch kleine Dinge), mit Kategorie.\n`;
   md += `- **Dankbar für**: Dankbarkeitstagebuch, beliebig viele Einträge pro Tag.\n`;
   md += `- **Was mir guttut**: angenehme Aktivitäten (Verhaltensaktivierung). Pro Tag: per Tages-Quest erledigte Aktivitäten mit optionaler Bewertung 1–5 Sterne.\n`;
-  md += `- **Tagesfazit**: rückblickende Gesamtstimmung 1–5 und Freitext.\n`;
+  md += `- **Tagesrückblick**: am Abend – was die Person aus dem Tag mitnimmt, worauf sie sich morgen freut, optional Gesamtstimmung 1–5.\n`;
   md += `- Fehlende Tage bedeuten: nichts eingetragen (nicht: schlechter Tag).\n\n`;
 
   if (data.goals.length) {
@@ -1447,7 +1514,8 @@ function buildMarkdown(fromKey) {
     if (cis.length || r) {
       const avg = cis.length ? (cis.reduce((s, c) => s + c.mood, 0) / cis.length).toFixed(1) : null;
       const range = cis.length > 1 ? ` (Spanne ${Math.min(...cis.map(c => c.mood))}–${Math.max(...cis.map(c => c.mood))})` : '';
-      md += `Stimmung: ${[avg ? `Check-ins Ø ${avg} aus ${cis.length}${range}` : '', r ? `Tagesfazit ${r.mood}/5` : ''].filter(Boolean).join(' · ')}\n\n`;
+      const line = [avg ? `Check-ins Ø ${avg} aus ${cis.length}${range}` : '', r && r.mood ? `Rückblick ${r.mood}/5` : ''].filter(Boolean).join(' · ');
+      if (line) md += `Stimmung: ${line}\n\n`;
     }
     if (cis.length) {
       md += `**Gefühls-Check-ins:**\n`;
@@ -1482,8 +1550,9 @@ function buildMarkdown(fromKey) {
       md += `\n`;
     }
     if (r) {
-      md += `**Tagesfazit:** Gesamtstimmung ${r.mood}/5\n`;
-      if (r.text) md += `> ${r.text.replace(/\n+/g, '\n> ')}\n`;
+      md += `**Tagesrückblick:**${r.mood ? ` Gesamtstimmung ${r.mood}/5` : ''}\n`;
+      if (r.text) md += `- Mitnehmen: ${r.text.replace(/\n+/g, ' ')}\n`;
+      if (r.lookForward) md += `- Vorfreude auf morgen: ${r.lookForward.replace(/\n+/g, ' ')}\n`;
       md += `\n`;
     }
   }
@@ -2121,6 +2190,7 @@ document.addEventListener('click', e => {
 
     case 'sheet-cancel': if (sheetDismissSaves && sheetSave) sheetSave(); else closeSheet(); break;
     case 'sheet-save': if (sheetSave) sheetSave(); break;
+    case 'toggle-help': { const h = $('#help-card'); if (h) { h.hidden = !h.hidden; el.classList.toggle('on', !h.hidden); if (!h.hidden) $('#sheet-body').scrollTop = 0; } break; }
     case 'pick-scale': {
       const v = Number(value), field = el.dataset.field;
       const newVal = el.classList.contains('on') && field !== 'mood' ? null : v;
@@ -2200,7 +2270,7 @@ document.addEventListener('click', e => {
     // Tagesfazit
     case 'open-reflection': openReflectionSheet(day); break;
     case 'delete-reflection':
-      if (confirm('Tagesfazit löschen?')) { delete data.reflections[day]; save(); closeSheet(); render(); }
+      if (confirm('Tagesrückblick löschen?')) { delete data.reflections[day]; save(); closeSheet(); render(); }
       break;
 
     // Ziele
