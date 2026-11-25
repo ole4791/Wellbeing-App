@@ -352,6 +352,14 @@ html.sheet-open .bottom, html.sheet-open .navbar { opacity: 0; }
 .quest.complete { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--green) 50%, transparent); }
 .quest.complete .q-item.done .q-check { background: var(--green); border-color: var(--green); }
 .quest.complete .q-item:not(.done) { opacity: .6; }
+.q-swap { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; color: var(--secondary); margin-right: -6px; }
+.q-swap:active { background: var(--fill); }
+.q-item.task .q-check { border-style: dashed; }
+.q-item.task.done .q-check { border-style: solid; }
+.q-badge.fire { background: linear-gradient(135deg, #FF9F0A, #FF453A); }
+.quest.fire { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, #FF7A1A 55%, transparent); }
+.q-badge.pop { animation: firePop .8s cubic-bezier(.2, 1.4, .4, 1) both; }
+@keyframes firePop { 0% { transform: scale(.3) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.18) rotate(3deg); opacity: 1; } 100% { transform: scale(1) rotate(0); } }
 .hero-quote p { margin: 0; font-size: 15px; font-style: italic; line-height: 1.35; color: var(--secondary); letter-spacing: -.24px; }
 .hero-quote small { display: block; margin-top: 3px; font-size: 12px; color: var(--secondary); opacity: .75; letter-spacing: 0; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
@@ -399,11 +407,7 @@ html.sheet-open .bottom, html.sheet-open .navbar { opacity: 0; }
 .star-btn:active { color: #FF9F0A; transform: scale(1.15); }
 .rated { display: flex; gap: 2px; margin: 4px 0 0 40px; color: var(--tertiary); }
 .rated .on { color: #FF9F0A; }
-.quest-foot { margin-top: 12px; font-size: 13px; color: var(--secondary); letter-spacing: -.08px; }
-.quest-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; gap: 12px; }
-.q-add { display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; font-size: 13px; font-weight: 600; color: var(--c-quest);
-  background: color-mix(in srgb, var(--c-quest) 12%, transparent); border-radius: 999px; padding: 5px 10px 5px 8px; }
-.q-add:active { opacity: .7; }
+.quest-foot { margin-top: 12px; font-size: 13px; color: var(--secondary); letter-spacing: -.08px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .link-btn.small { font-size: 15px; font-weight: 500; letter-spacing: -.24px; color: var(--c-quest); }
 .intro-card { background: var(--card); border-radius: 12px; padding: 14px 16px; font-size: 15px; line-height: 1.42; letter-spacing: -.24px; color: var(--secondary); margin-top: 18px; }
 .seg-list { padding: 4px 0; }
@@ -489,6 +493,7 @@ const ICONS = {
   copy: '<rect x="8.5" y="8.5" width="11.5" height="12.5" rx="2.5"/><path d="M15.5 8.5V6a2.5 2.5 0 0 0-2.5-2.5H6.5A2.5 2.5 0 0 0 4 6v7a2.5 2.5 0 0 0 2.5 2.5h2"/>',
   archive: '<rect x="3" y="4" width="18" height="5" rx="1.5"/><path d="M5 9v9a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9M10 13h4"/>',
   restore: '<path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5"/><path d="M4 4v4.5h4.5"/>',
+  refresh: '<path d="M20 12a8 8 0 1 1-2.4-5.7L20 8.5"/><path d="M20 4v4.5h-4.5"/>',
   tag: '<path d="M3.5 12.2V5a1.5 1.5 0 0 1 1.5-1.5h7.2l8.3 8.3-8.7 8.7z"/><circle cx="8" cy="8" r="1.3"/>',
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.8" r=".5" fill="currentColor"/>',
   phone: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
@@ -843,7 +848,7 @@ function renderHero(k) {
   const stat = (c, ic, value, label) => `<div class="stat" style="--c:${c}"><div class="stat-top">${value}${icon(ic, 18, 2)}</div><small>${label}</small></div>`;
   const stats = stat('var(--c-done)', 'checkCircle', `<b>${donesOn(k).length}</b>`, 'Done')
     + stat('var(--c-grat)', 'sparkles', `<b>${gratitudeOn(k).length}</b>`, 'Dankbar')
-    + stat('var(--c-feel)', 'heart', mood ? `<span class="emo">${MOODS[mood - 1].emoji}</span>` : `<b>–</b>`, 'Stimmung');
+    + stat('var(--c-feel)', 'heart', `<b>${checkinsOn(k).length}</b>`, 'Gefühle');
 
   let week = '';
   for (let i = 6; i >= 0; i--) {
@@ -1011,7 +1016,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.10 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.11 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
 }
 
 /* =========================================================
@@ -1581,7 +1586,7 @@ function buildMarkdown(fromKey) {
       grats.forEach(g => { const t = timeIfSameDay(g.createdAt, k); md += `- ${t ? t + ' – ' : ''}${g.text}\n`; });
       md += `\n`;
     }
-    const qlog = data.questLog.filter(l => l.date === k);
+    const qlog = data.questLog.filter(l => l.date === k && !isTaskId(l.itemId));
     if (qlog.length) {
       md += `**Was mir guttut (Tages-Quest gemacht):**\n`;
       qlog.forEach(l => {
@@ -1830,10 +1835,16 @@ function ideaPool(source) {
   return out;
 }
 const isIdeaId = id => typeof id === 'string' && id.startsWith('idea:');
+// Besonderer Quest-Eintrag: die eigene Liste um etwas ergänzen (ein neuer Eintrag reicht)
+const LIST_TASK = 'task:list';
+const isTaskId = id => id === LIST_TASK;
+// Zufällig an manchen Tagen, häufiger solange die Liste kurz ist
+const listTaskToday = k => seeded('listtask' + k) < (data.lists.activities.length < 5 ? 0.5 : 0.15);
 const ideasEnabled = () => data.settings.questIdeas !== false;
 
 // Eintrag zu einer ID finden: eigener Listeneintrag oder Idee
 function resolveItem(source, id) {
+  if (isTaskId(id)) return { id, text: 'Ergänze deine Liste um etwas, das dir guttut', task: true };
   if (isIdeaId(id)) return ideaPool(source).find(i => i.id === id) || null;
   return data.lists[source].find(i => i.id === id) || null;
 }
@@ -1847,7 +1858,8 @@ function seeded(str) {
 
 const isWeekend = k => [0, 6].includes(parseKey(k).getDay());
 const questLogOn = (k, source) => data.questLog.filter(l => l.date === k && (!source || l.source === source));
-const monthQuestCount = k => data.questLog.filter(l => l.date.slice(0, 7) === k.slice(0, 7)).length;
+// Zählt gemachte Aktivitäten (das Ergänzen der Liste zählt fürs „Geschafft“, aber nicht hier)
+const monthQuestCount = k => data.questLog.filter(l => l.date.slice(0, 7) === k.slice(0, 7) && !isTaskId(l.itemId)).length;
 
 // Wann war ein Eintrag zuletzt dran? → { itemId: 'JJJJ-MM-TT' }
 function lastDoneMap(source) {
@@ -1924,7 +1936,7 @@ function getDailyQuest(k = dateKey()) {
   if (!mix.own && !mix.ideas) return null;
   let q = data.quests.daily[k];
   let changed = false;
-  if (!q || q.source !== source) { q = { source, suggestions: [], skipped: [] }; data.quests.daily[k] = q; changed = true; }
+  if (!q || q.source !== source) { q = { source, suggestions: [], skipped: [], listTask: listTaskToday(k) }; data.quests.daily[k] = q; changed = true; }
   // Nicht mehr vorhandene Einträge entfernen (gelöscht, Ideen abgeschaltet oder inzwischen in der Liste)
   const ownTexts = new Set(data.lists.activities.map(a => a.text.toLowerCase()));
   const doneIds = questLogOn(k, source).map(l => l.itemId);
@@ -1936,42 +1948,61 @@ function getDailyQuest(k = dateKey()) {
     return true;
   });
   if (q.suggestions.length !== before) changed = true;
+  // Listen-Aufgabe nimmt einen Platz ein (bevorzugt den der neuen Idee)
+  if (q.listTask && !q.suggestions.includes(LIST_TASK) && !q.skipped.includes(LIST_TASK)) { q.suggestions.push(LIST_TASK); changed = true; }
+  const m = { ...mix };
+  if (q.suggestions.includes(LIST_TASK)) { if (m.ideas > 0) m.ideas--; else m.own = Math.max(0, m.own - 1); }
   // Auffüllen
-  const haveOwn = q.suggestions.filter(id => !isIdeaId(id)).length;
-  const haveIdeas = q.suggestions.length - haveOwn;
-  const room = Math.max(0, mix.own + mix.ideas - q.suggestions.length); // nie mehr als QUEST_SIZE
+  const regular = q.suggestions.filter(id => !isTaskId(id));
+  const haveOwn = regular.filter(id => !isIdeaId(id)).length;
+  const haveIdeas = regular.length - haveOwn;
+  const room = Math.max(0, m.own + m.ideas - regular.length); // nie mehr als QUEST_SIZE
   const exclude = [...q.suggestions, ...q.skipped];
-  const needOwn = Math.max(0, Math.min(mix.own - haveOwn, room));
+  const needOwn = Math.max(0, Math.min(m.own - haveOwn, room));
   let addOwn = pickOwn(k, exclude, needOwn);
   if (addOwn.length < needOwn) addOwn = pickOwn(k, q.suggestions, needOwn);
-  const needIdeas = Math.max(0, Math.min(mix.ideas - haveIdeas + (needOwn - addOwn.length), room - addOwn.length));
+  const needIdeas = Math.max(0, Math.min(m.ideas - haveIdeas + (needOwn - addOwn.length), room - addOwn.length));
   const addIdeas = pickIdeas(k, exclude, needIdeas);
   if (addOwn.length || addIdeas.length) { q.suggestions.push(...addOwn, ...addIdeas); changed = true; }
+  // Listen-Aufgabe steht immer unten
+  if (q.suggestions.includes(LIST_TASK) && q.suggestions[q.suggestions.length - 1] !== LIST_TASK) {
+    q.suggestions = [...q.suggestions.filter(id => !isTaskId(id)), LIST_TASK]; changed = true;
+  }
   if (changed) save();
   return q.suggestions.length ? q : null;
 }
 
-// „Passt heute nicht“: offene Vorschläge gegen neue tauschen (nur für heute)
-function skipDailyQuest() {
+// „Anderer Vorschlag“: einen einzelnen offenen Vorschlag tauschen (nur für heute)
+function swapQuestItem(id) {
   const k = dateKey();
   const q = getDailyQuest(k);
   if (!q) return;
-  const doneIds = questLogOn(k, q.source).map(l => l.itemId);
-  const open = q.suggestions.filter(id => !doneIds.includes(id));
-  if (!open.length) return;
-  q.skipped = [...new Set([...q.skipped, ...open])];
-  const keep = q.suggestions.filter(id => doneIds.includes(id));
-  const needOwn = open.filter(id => !isIdeaId(id)).length;
-  const needIdeas = open.length - needOwn;
-  let own = pickOwn(k, [...keep, ...q.skipped], needOwn);
-  if (own.length < needOwn) { // eigene Liste einmal durch → Runde von vorn
-    q.skipped = q.skipped.filter(isIdeaId);
-    own = pickOwn(k, [...keep, ...open], needOwn);
+  const idx = q.suggestions.indexOf(id);
+  if (idx < 0) return;
+  q.skipped = [...new Set([...q.skipped, id])];
+  const exclude = [...q.suggestions, ...q.skipped];
+  let next = null;
+  if (!isIdeaId(id) && !isTaskId(id)) {
+    next = pickOwn(k, exclude, 1)[0];
+    if (!next) { // eigene Liste einmal durch → Runde von vorn
+      q.skipped = q.skipped.filter(x => isIdeaId(x) || isTaskId(x));
+      next = pickOwn(k, q.suggestions, 1)[0];
+    }
   }
-  const ideas = pickIdeas(k, [...keep, ...q.skipped], needIdeas + (needOwn - own.length));
-  if (!own.length && !ideas.length) { toast('Mehr Ideen? Ergänze deine Liste.', false); return; }
-  q.suggestions = [...keep, ...own, ...ideas];
+  if (!next) next = pickIdeas(k, exclude, 1)[0];
+  if (!next) next = pickOwn(k, exclude, 1)[0];
+  if (!next) { q.skipped = q.skipped.filter(x => x !== id); toast('Gerade keine weiteren Vorschläge', false); return; }
+  q.suggestions[idx] = next;
   save(); render();
+}
+
+// Wird ein Eintrag zur Liste hinzugefügt, ist die Listen-Aufgabe von heute geschafft
+function markListTaskDone() {
+  const k = dateKey();
+  const q = data.quests.daily[k];
+  if (!q || !q.suggestions.includes(LIST_TASK)) return;
+  if (questLogOn(k, q.source).some(l => l.itemId === LIST_TASK)) return;
+  data.questLog.push({ id: uid(), source: q.source, itemId: LIST_TASK, text: 'Liste ergänzt', date: k, doneAt: new Date().toISOString(), rating: null });
 }
 
 function toggleQuestDone(itemId) {
@@ -1988,17 +2019,6 @@ function toggleQuestDone(itemId) {
   data.questLog.push(log);
   ui.ratingFor = log.id;
   save(); render();
-}
-
-// Idee aus der Quest in die eigene Liste übernehmen (Quest + Verlauf zeigen dann auf den neuen Eintrag)
-function ideaToList(ideaId) {
-  const idea = resolveItem('activities', ideaId);
-  if (!idea) return;
-  const it = addActivity(idea.text, idea.duration, idea.setting);
-  Object.values(data.quests.daily).forEach(q => { q.suggestions = q.suggestions.map(id => (id === ideaId ? it.id : id)); });
-  data.questLog.forEach(l => { if (l.itemId === ideaId) l.itemId = it.id; });
-  save(); render();
-  toast('In deine Liste übernommen');
 }
 
 const starIcon = (filled, size = 24) =>
@@ -2032,7 +2052,8 @@ function renderQuestCard() {
     const it = resolveItem(source, id);
     if (!it) return '';
     const log = logs.find(l => l.itemId === id);
-    const meta = [it.idea ? 'Neue Idee' : '', metaText(it)].filter(Boolean).join(' · ');
+    const isTask = isTaskId(id);
+    const meta = isTask ? 'Ein neuer Eintrag reicht' : [it.idea ? 'Neue Idee' : '', metaText(it)].filter(Boolean).join(' · ');
     let extra = '';
     if (log && ui.ratingFor === log.id && !log.rating) {
       extra = `<div class="rate"><span>Wie war's?</span><span class="stars">${[1, 2, 3, 4, 5].map(v =>
@@ -2041,26 +2062,31 @@ function renderQuestCard() {
     } else if (log && log.rating) {
       extra = `<div class="rated">${[1, 2, 3, 4, 5].map(v => `<span class="${v <= log.rating ? 'on' : ''}">${starIcon(v <= log.rating, 14)}</span>`).join('')}</div>`;
     }
-    const addBtn = it.idea ? `<button class="q-add" data-action="idea-to-list" data-id="${esc(id)}" aria-label="In meine Liste">${icon('plus', 15, 2.4)}Liste</button>` : '';
-    return `<div class="q-item ${log ? 'done' : ''} ${it.idea ? 'idea' : ''}">
+    // Listen-Aufgabe: öffnet die Liste und hakt sich beim ersten neuen Eintrag selbst ab
+    const checkAction = isTask ? 'data-action="open-list"' : `data-action="quest-done" data-id="${esc(id)}"`;
+    const swapBtn = log ? '' : `<button class="q-swap" data-action="quest-swap" data-id="${esc(id)}" aria-label="Anderer Vorschlag">${icon('refresh', 18, 2.1)}</button>`;
+    return `<div class="q-item ${log ? 'done' : ''} ${it.idea ? 'idea' : ''} ${isTask ? 'task' : ''}">
       <div class="q-row">
-        <button class="q-check" data-action="quest-done" data-id="${esc(id)}" aria-label="${log ? 'Zurücknehmen' : 'Abhaken'}">${log ? icon('check', 16, 3) : ''}</button>
-        <span class="q-text"><span>${esc(it.text)}</span>${meta ? `<span class="q-meta">${esc(meta)}</span>` : ''}</span>${addBtn}
+        <button class="q-check" ${checkAction} aria-label="${isTask ? 'Liste öffnen' : log ? 'Zurücknehmen' : 'Abhaken'}">${log ? icon('check', 16, 3) : ''}</button>
+        <span class="q-text" ${isTask ? 'data-action="open-list"' : ''}><span>${esc(it.text)}</span>${meta ? `<span class="q-meta">${esc(meta)}</span>` : ''}</span>${swapBtn}
       </div>${extra}</div>`;
   }).join('');
 
-  const canSkip = !allDone;
-  // Geschafft, sobald eine Aktivität gemacht ist: Badge, grüner Rahmen, neue Überschrift
-  if (anyDone) label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge">${icon('check', 12, 3)}Geschafft</span></div>`;
-  return `<div class="quest ${anyDone ? 'complete' : ''}">${label}
+  // Geschafft, sobald eins gemacht ist: Badge, grüner Rahmen, neue Überschrift.
+  // Alle drei: „Feuer und Flamme“ (nur für heute, wird nicht gezählt oder angekündigt)
+  const fire = allDone && q.suggestions.length >= 3;
+  if (fire) {
+    label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge fire ${ui.fireAnim !== k ? 'pop' : ''}">🔥 Feuer und Flamme</span></div>`;
+    ui.fireAnim = k;
+  } else if (anyDone) {
+    label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge">${icon('check', 12, 3)}Geschafft</span></div>`;
+  }
+  return `<div class="quest ${anyDone ? 'complete' : ''} ${fire ? 'fire' : ''}">${label}
     <div class="quest-title">${esc(anyDone ? 'Schön, dass du dir Zeit für dich genommen hast' : title)}</div>
     ${!anyDone && !hasOwn ? `<div class="quest-sub">${esc(src.emptyText)}</div>` : ''}
     <div class="q-items">${rows}</div>
     <div class="quest-foot">
       <span>${n ? `Diesen Monat ${n} ${n === 1 ? 'Ding' : 'Dinge'} gemacht, die dir guttun` : 'Jedes Mal zählt, ganz ohne Druck.'}</span>
-    </div>
-    <div class="quest-actions">
-      ${canSkip ? `<button class="link-btn small" data-action="quest-skip">Passt heute nicht, anderer Vorschlag</button>` : '<span></span>'}
       <button class="link-btn small" data-action="open-list">${hasOwn ? 'Liste' : 'Liste anlegen'}</button>
     </div></div>`;
 }
@@ -2145,6 +2171,7 @@ function openActivitySheet(existing = null) {
 function addActivity(text, duration, setting) {
   const it = { id: uid(), text, duration: duration || null, setting: setting || null, createdAt: new Date().toISOString() };
   data.lists.activities.push(it);
+  markListTaskDone();
   save();
   return it;
 }
@@ -2223,8 +2250,7 @@ document.addEventListener('click', e => {
       break;
     }
     case 'quest-rate-skip': ui.ratingFor = null; render(); break;
-    case 'quest-skip': skipDailyQuest(); break;
-    case 'idea-to-list': ideaToList(id); break;
+    case 'quest-swap': swapQuestItem(id); break;
     case 'cal-prev': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() - 1, 1); render(); break;
     case 'cal-next': ui.calMonth = new Date(ui.calMonth.getFullYear(), ui.calMonth.getMonth() + 1, 1); render(); break;
     case 'select-day': ui.calSelected = day; render(); break;
