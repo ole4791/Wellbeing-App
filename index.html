@@ -345,6 +345,9 @@ html.sheet-open .bottom, html.sheet-open .navbar { opacity: 0; }
     var(--card); }
 .hero-greet { font-size: 22px; font-weight: 700; letter-spacing: .35px; }
 .hero-prompt { margin-top: 4px; font-size: 15px; color: var(--secondary); letter-spacing: -.24px; }
+.hero-quote { margin-top: 6px; }
+.hero-quote p { margin: 0; font-size: 15px; font-style: italic; line-height: 1.35; color: var(--secondary); letter-spacing: -.24px; }
+.hero-quote small { display: block; margin-top: 3px; font-size: 12px; color: var(--secondary); opacity: .75; letter-spacing: 0; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
 .stat { background: color-mix(in srgb, var(--card) 70%, transparent); border-radius: 12px; padding: 10px 10px 9px;
   display: flex; flex-direction: column; gap: 2px; box-shadow: inset 0 0 0 .5px var(--sep); }
@@ -579,22 +582,51 @@ const HELP = {
     <div class="tip">Es gibt kein Richtig oder Falsch. Auch unangenehme Gefühle dürfen sein, und sie gehen vorüber.</div>`,
 };
 
-// Kleine Impulse für die Startseite (wechseln täglich)
-const PROMPTS = [
-  'Was hat dir heute Energie gegeben?',
-  'Welcher kleine Moment war heute gut?',
-  'Worauf bist du heute stolz?',
-  'Wem möchtest du heute danken?',
-  'Was hast du heute für dich getan?',
-  'Was hat dich heute zum Lächeln gebracht?',
-  'Was darf heute einfach gut genug sein?',
-  'Welcher Schritt hat dich heute weitergebracht?',
-  'Was hast du heute Neues gelernt?',
-  'Wo warst du heute ganz bei dir?',
-  'Was möchtest du morgen beibehalten?',
-  'Welches Gefühl war heute am stärksten?',
-  'Wofür war heute Zeit, wofür nicht?',
-  'Was hat sich heute leicht angefühlt?',
+// Zitat des Tages für die Tageskarte (wechselt täglich, ohne Bezug zum Tag).
+// Mix aus belegten Zitaten, kurzen Buchzitaten und eigenen Sätzen; die Arten
+// stehen abwechselnd, damit sich die Tage mischen. Neue Einträge einfach ergänzen.
+// Nur Zitate mit klarer Quelle aufnehmen (viele „Einstein“-/„Konfuzius“-Sprüche sind falsch zugeordnet).
+const ANON = 'Autor unbekannt';
+const OPUS = 'Claude Opus, französischer Anthropologe';
+const QUOTES = [
+  { text: 'Kleine Schritte sind auch Schritte.', by: ANON },
+  { text: 'Eine Reise von tausend Meilen beginnt mit dem ersten Schritt.', by: 'nach Laotse, Tao Te Ching' },
+  { text: 'Du musst heute nicht alles schaffen. Eins reicht.', by: ANON },
+  { text: 'Nicht weil es schwer ist, wagen wir es nicht, sondern weil wir es nicht wagen, ist es schwer.', by: 'Seneca, Briefe an Lucilius' },
+  { text: 'Gute und schwere Momente dürfen nebeneinander stehen.', by: ANON },
+  { text: 'Lass dir alles geschehn: Schönheit und Schrecken. Man muss nur gehn: Kein Gefühl ist das fernste.', by: 'Rainer Maria Rilke, Das Stunden-Buch' },
+  { text: 'Fünf Minuten sind kein Nichts.', by: ANON },
+  { text: 'Nicht die Dinge selbst beunruhigen die Menschen, sondern ihre Meinungen über die Dinge.', by: 'Epiktet, Handbüchlein der Moral' },
+  { text: 'Das Glück steht selten auf der To-do-Liste, aber erstaunlich oft auf der Done-Liste.', by: OPUS },
+  { text: 'Es ist nicht genug, zu wissen, man muss auch anwenden; es ist nicht genug, zu wollen, man muss auch tun.', by: 'Johann Wolfgang von Goethe, Wilhelm Meisters Wanderjahre' },
+  { text: 'Gut genug ist heute gut genug.', by: ANON },
+  { text: 'Das Bessere ist der Feind des Guten.', by: 'Voltaire' },
+  { text: 'Die Stimmung folgt oft dem Tun.', by: ANON },
+  { text: 'Hab Geduld mit allem Ungelösten in deinem Herzen.', by: 'nach Rainer Maria Rilke, Briefe an einen jungen Dichter' },
+  { text: 'Auch ein schwerer Tag hat gute Momente. Man muss sie nur bemerken.', by: ANON },
+  { text: 'Wer andere kennt, ist klug. Wer sich selbst kennt, ist weise.', by: 'nach Laotse, Tao Te Ching' },
+  { text: 'Was du heute tust, zählt. Auch wenn es klein ist.', by: ANON },
+  { text: 'Während man es aufschiebt, eilt das Leben vorüber.', by: 'Seneca, Briefe an Lucilius' },
+  { text: 'Große Dinge bestehen aus vielen kleinen Dones.', by: OPUS },
+  { text: 'Man sieht nur mit dem Herzen gut. Das Wesentliche ist für die Augen unsichtbar.', by: 'Antoine de Saint-Exupéry, Der kleine Prinz' },
+  { text: 'Ein Gefühl zu benennen ist schon ein kleiner Schritt.', by: ANON },
+  { text: 'Die Welt ist Veränderung, das Leben Auffassung.', by: 'Mark Aurel, Selbstbetrachtungen' },
+  { text: 'Pausen sind kein Stillstand.', by: ANON },
+  { text: 'Wer überall ist, ist nirgends.', by: 'Seneca, Briefe an Lucilius' },
+  { text: 'Kopf hoch. Nicht weil alles gut ist, sondern weil du weitergehst.', by: ANON },
+  { text: 'Das Leben kann nur rückwärts verstanden, aber muss vorwärts gelebt werden.', by: 'nach Søren Kierkegaard, Tagebücher' },
+  { text: 'Dankbarkeit macht aus dem, was wir haben, genug.', by: ANON },
+  { text: 'Von den Dingen stehen die einen in unserer Macht, die anderen nicht.', by: 'Epiktet, Handbüchlein der Moral' },
+  { text: 'Wer seine Dones zählt, merkt, wie viel er längst schafft.', by: OPUS },
+  { text: 'Verliere keine Zeit mehr damit, zu erörtern, wie ein guter Mensch sein soll. Sei einer.', by: 'Mark Aurel, Selbstbetrachtungen' },
+  { text: 'Du musst nicht motiviert sein, um anzufangen. Oft kommt die Motivation beim Anfangen.', by: ANON },
+  { text: 'Wir haben nicht zu wenig Zeit, sondern wir vergeuden viel davon.', by: 'nach Seneca, Von der Kürze des Lebens' },
+  { text: 'Heute ist ein guter Tag für etwas Kleines.', by: ANON },
+  { text: 'Die Seele wird von den Gedanken gefärbt.', by: 'nach Mark Aurel, Selbstbetrachtungen' },
+  { text: 'Fortschritt ist leise. Man hört ihn erst im Rückblick.', by: ANON },
+  { text: 'Wer heute einen kleinen Schritt macht, hat morgen einen weniger vor sich. Und einen mehr hinter sich.', by: OPUS },
+  { text: 'Es darf auch einfach ein normaler Tag sein.', by: ANON },
+  { text: 'Freundlich mit sich zu sein ist kein Luxus, sondern Grundausstattung.', by: ANON },
 ];
 
 /* =========================================================
@@ -793,7 +825,11 @@ function renderHero(k) {
   const dayOfYear = Math.floor((parseKey(k) - new Date(parseKey(k).getFullYear(), 0, 0)) / 86400000);
   const yk = (() => { const d = parseKey(k); d.setDate(d.getDate() - 1); return dateKey(d); })();
   const forward = data.reflections[yk] && data.reflections[yk].lookForward;
-  const prompt = forward ? `Gestern hast du dich gefreut auf: ${forward}` : PROMPTS[dayOfYear % PROMPTS.length];
+  // Vorfreude vom Vortag hat Vorrang, sonst das Zitat des Tages
+  const quote = QUOTES[dayOfYear % QUOTES.length];
+  const line = forward
+    ? `<div class="hero-prompt">Gestern hast du dich gefreut auf: ${esc(forward)}</div>`
+    : `<div class="hero-quote"><p>„${esc(quote.text)}“</p><small>${esc(quote.by)}</small></div>`;
   const mood = dayMood(k);
 
   const stat = (c, ic, value, label) => `<div class="stat" style="--c:${c}"><div class="stat-top">${value}${icon(ic, 18, 2)}</div><small>${label}</small></div>`;
@@ -812,7 +848,7 @@ function renderHero(k) {
   }
   return `<div class="hero">
     <div class="hero-greet">${greet}${name ? ', ' + esc(name) : ''}</div>
-    <div class="hero-prompt">${esc(prompt)}</div>
+    ${line}
     <div class="stats">${stats}</div>
     <div class="week">${week}</div>
   </div>`;
@@ -967,7 +1003,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.8 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.9 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
 }
 
 /* =========================================================
