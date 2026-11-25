@@ -346,6 +346,12 @@ html.sheet-open .bottom, html.sheet-open .navbar { opacity: 0; }
 .hero-greet { font-size: 22px; font-weight: 700; letter-spacing: .35px; }
 .hero-prompt { margin-top: 4px; font-size: 15px; color: var(--secondary); letter-spacing: -.24px; }
 .hero-quote { margin-top: 6px; }
+.rv-action .cell-title { color: var(--indigo) !important; }
+/* Quest geschafft (Grün nur für diesen Zustand) */
+.q-badge { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 7px; border-radius: 999px; background: var(--green); color: #fff; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.quest.complete { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--green) 50%, transparent); }
+.quest.complete .q-item.done .q-check { background: var(--green); border-color: var(--green); }
+.quest.complete .q-item:not(.done) { opacity: .6; }
 .hero-quote p { margin: 0; font-size: 15px; font-style: italic; line-height: 1.35; color: var(--secondary); letter-spacing: -.24px; }
 .hero-quote small { display: block; margin-top: 3px; font-size: 12px; color: var(--secondary); opacity: .75; letter-spacing: 0; }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
@@ -717,7 +723,9 @@ const daysSince = iso => Math.floor((Date.now() - new Date(iso).getTime()) / 864
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 function catInfo(name) {
-  return data.categories.find(c => c.name === name) || { name, icon: 'check', color: '#8E8E93' };
+  // Farbe zeigt den Bereich (Done = Blau), die Kategorie erkennt man am Symbol
+  const c = data.categories.find(x => x.name === name) || { name, icon: 'check' };
+  return { ...c, color: 'var(--c-done)' };
 }
 const catBadge = name => { const c = catInfo(name); return badge(c.icon, c.color); };
 const visibleCategories = () => data.categories.filter(c => !c.hidden);
@@ -833,7 +841,7 @@ function renderHero(k) {
   const mood = dayMood(k);
 
   const stat = (c, ic, value, label) => `<div class="stat" style="--c:${c}"><div class="stat-top">${value}${icon(ic, 18, 2)}</div><small>${label}</small></div>`;
-  const stats = stat('var(--c-done)', 'checkCircle', `<b>${donesOn(k).length}</b>`, 'Erledigt')
+  const stats = stat('var(--c-done)', 'checkCircle', `<b>${donesOn(k).length}</b>`, 'Done')
     + stat('var(--c-grat)', 'sparkles', `<b>${gratitudeOn(k).length}</b>`, 'Dankbar')
     + stat('var(--c-feel)', 'heart', mood ? `<span class="emo">${MOODS[mood - 1].emoji}</span>` : `<b>–</b>`, 'Stimmung');
 
@@ -858,7 +866,7 @@ function renderDay(k, isToday) {
   const dones = donesOn(k), cis = checkinsOn(k), grats = gratitudeOn(k), r = data.reflections[k];
   let html = '';
 
-  html += secHead('Erledigt', dones.length || null, 'new-done', k, 'var(--c-done)');
+  html += secHead('Done', dones.length || null, 'new-done', k, 'var(--c-done)');
   html += `<div class="list">${dones.length ? dones.map(d => cell({
     lead: catBadge(d.category), title: esc(d.text),
     sub: esc(d.category) + (d.goalId ? ' · ' + esc(goalTitle(d.goalId)) : ''),
@@ -887,7 +895,7 @@ function renderDay(k, isToday) {
       acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`,
     })}</div>`;
   } else {
-    html += `<div class="list">${cell({ lead: badge('moon', 'var(--indigo)'), title: 'Auf den Tag zurückblicken', acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`, cls: 'action' })}</div>`;
+    html += `<div class="list">${cell({ lead: badge('moon', 'var(--indigo)'), title: 'Auf den Tag zurückblicken', acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`, cls: 'action rv-action' })}</div>`;
   }
   return html;
 }
@@ -951,7 +959,7 @@ function renderMore() {
 
   const cats = data.categories.map(c => `
     <div class="cell">
-      <span class="cell-lead">${badge(c.icon, c.color)}</span>
+      <span class="cell-lead">${badge(c.icon, 'var(--c-done)')}</span>
       <span class="cell-body">
         <button class="cell-text" data-action="edit-cat" data-id="${c.id}" style="text-align:left"><span class="cell-title" style="${c.hidden ? 'color:var(--secondary)' : ''}">${esc(c.name)}</span></button>
         <input type="checkbox" class="switch" data-change="cat-visible" data-id="${c.id}" ${c.hidden ? '' : 'checked'} aria-label="${esc(c.name)} anzeigen">
@@ -1003,7 +1011,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.9 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.10 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
 }
 
 /* =========================================================
@@ -1177,7 +1185,7 @@ function openDoneSheet(day, existing = null) {
         <input id="done-date" class="inline" type="date" value="${day || dateKey()}"></span></div>
       ${goalSelect(null)}
     </div></div>`;
-  openSheet('Erledigt', body, finishDoneSheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-done)', help: HELP.done });
+  openSheet('Done', body, finishDoneSheet, { saveLabel: 'Fertig', cancel: false, color: 'var(--c-done)', help: HELP.done });
   focusNoScroll($('#done-text'));
 }
 
@@ -1389,7 +1397,7 @@ function openReflectionSheet(k) {
     <div class="sheet-note" style="margin:0 2px 10px;font-size:15px;color:var(--text)"><strong>${esc(fmtDayLong(k))}</strong></div>
     <div class="rv-card" style="--c:var(--c-feel)"><div class="rv-head">${icon('heart', 16, 2.2)}Dein Tag in Momenten</div>${moments}</div>
     <div class="rv-card" style="--c:var(--c-grat)"><div class="rv-head">${icon('sparkles', 16, 2.2)}Dankbar für</div>${list(grats.map(g => g.text), 'Noch nichts eingetragen.')}</div>
-    <div class="rv-card" style="--c:var(--c-done)"><div class="rv-head">${icon('checkCircle', 16, 2.2)}Erledigt</div>${list(dones.map(d => d.text), 'Noch nichts eingetragen.')}</div>
+    <div class="rv-card" style="--c:var(--c-done)"><div class="rv-head">${icon('checkCircle', 16, 2.2)}Done</div>${list(dones.map(d => d.text), 'Noch nichts eingetragen.')}</div>
     <div class="sheet-sec"><div class="sheet-label">Was nimmst du aus dem Tag mit?</div>
       <div class="list"><textarea id="rf-text" class="field" rows="2" style="min-height:72px" placeholder="Ein Gedanke, ein Moment, eine Erkenntnis …">${esc(r.text || '')}</textarea></div></div>
     <div class="sheet-sec"><div class="sheet-label">Worauf freust du dich morgen?</div>
@@ -1453,14 +1461,11 @@ function saveGoal(existing) {
    ========================================================= */
 function openCategorySheet(existing = null) {
   const c = existing || { name: '', icon: 'star', color: '#007AFF', hidden: false };
-  ui.draft = { icon: c.icon, color: c.color };
+  ui.draft = { icon: c.icon, color: 'var(--c-done)' };
   const used = existing ? data.dones.filter(d => d.category === existing.name).length : 0;
   const body = `
     <div style="display:flex;justify-content:center;margin:8px 0 18px" id="cat-preview">${catPreview()}</div>
     <div class="list"><input id="cat-name" class="field" placeholder="Name der Kategorie" value="${esc(c.name)}" autocomplete="off" maxlength="24"></div>
-    <div class="sheet-sec"><div class="sheet-label">Farbe</div><div class="list"><div class="color-grid">
-      ${IOS_COLORS.map(col => `<button type="button" class="color-pick ${col === c.color ? 'on' : ''}" style="--c:${col}" data-action="pick-cat-color" data-value="${col}" aria-label="Farbe"></button>`).join('')}
-    </div></div></div>
     <div class="sheet-sec"><div class="sheet-label">Symbol</div><div class="list"><div class="icon-grid" id="icon-grid">${iconGrid()}</div></div></div>
     ${existing && existing.name !== 'Sonstiges' ? `<div class="sheet-sec"><div class="list">${cell({ title: 'Kategorie löschen', action: 'delete-cat', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div>
       ${used ? `<p class="sheet-note">${plural(used, 'Done nutzt', 'Dones nutzen')} diese Kategorie. Beim Löschen werden sie zu „Sonstiges“.</p>` : ''}</div>` : ''}`;
@@ -1524,9 +1529,9 @@ function buildMarkdown(fromKey) {
   md += `- Persönliches Wellbeing-Tagebuch einer Person. Ein Abschnitt pro Tag (ISO-Datum), Einträge mit 24-h-Uhrzeit, wenn am selben Tag erfasst.\n`;
   md += `- **Gefühls-Check-ins**: Momentaufnahmen, mehrere pro Tag. Stimmung 1–5 (1 = sehr schlecht, 3 = neutral, 5 = sehr gut), benannte Gefühle, optional Auslöser und Notiz. Sie zeigen das Auf und Ab innerhalb eines Tages.\n`;
   md += `- **Gefühlsgruppen** in Klammern: angenehm = ${POSITIVE_GROUPS.join(', ')}; unangenehm = ${NEGATIVE_GROUPS.join(', ')}; gemischt = Sonstiges; „eigene“ = selbst formulierte Gefühle.\n`;
-  md += `- **Erledigt**: Done-Liste (was geschafft wurde, auch kleine Dinge), mit Kategorie.\n`;
+  md += `- **Done**: Done-Liste (was geschafft wurde, auch kleine Dinge), mit Kategorie.\n`;
   md += `- **Dankbar für**: Dankbarkeitstagebuch, beliebig viele Einträge pro Tag.\n`;
-  md += `- **Was mir guttut**: angenehme Aktivitäten (Verhaltensaktivierung). Pro Tag: per Tages-Quest erledigte Aktivitäten mit optionaler Bewertung 1–5 Sterne.\n`;
+  md += `- **Was mir guttut**: angenehme Aktivitäten (Verhaltensaktivierung). Pro Tag: per Tages-Quest gemachte Aktivitäten mit optionaler Bewertung 1–5 Sterne.\n`;
   md += `- **Tagesrückblick**: am Abend – was die Person aus dem Tag mitnimmt, worauf sie sich morgen freut, optional Gesamtstimmung 1–5.\n`;
   md += `- Fehlende Tage bedeuten: nichts eingetragen (nicht: schlechter Tag).\n\n`;
 
@@ -1566,7 +1571,7 @@ function buildMarkdown(fromKey) {
     }
     const dones = donesOn(k);
     if (dones.length) {
-      md += `**Erledigt:**\n`;
+      md += `**Done:**\n`;
       dones.forEach(d => { const t = timeIfSameDay(d.createdAt, k); md += `- ${t ? t + ' – ' : ''}${d.text} [${d.category}]${d.goalId ? ` → Ziel: ${goalTitle(d.goalId)}` : ''}\n`; });
       md += `\n`;
     }
@@ -1578,7 +1583,7 @@ function buildMarkdown(fromKey) {
     }
     const qlog = data.questLog.filter(l => l.date === k);
     if (qlog.length) {
-      md += `**Was mir guttut (Tages-Quest erledigt):**\n`;
+      md += `**Was mir guttut (Tages-Quest gemacht):**\n`;
       qlog.forEach(l => {
         const a = acts.find(x => x.id === l.itemId);
         md += `- ${fmtTime(l.doneAt)} – ${a ? a.text : l.text}${l.rating ? ` – ${l.rating}/5 Sterne` : ''}\n`;
@@ -2005,7 +2010,7 @@ function renderQuestCard() {
   const k = dateKey();
   const source = dailyQuestSource();
   const src = QUEST_SOURCES[source];
-  const label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest</div>`;
+  let label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest</div>`;
   const q = getDailyQuest(k);
   const hasOwn = data.lists[source].length > 0;
 
@@ -2039,15 +2044,17 @@ function renderQuestCard() {
     const addBtn = it.idea ? `<button class="q-add" data-action="idea-to-list" data-id="${esc(id)}" aria-label="In meine Liste">${icon('plus', 15, 2.4)}Liste</button>` : '';
     return `<div class="q-item ${log ? 'done' : ''} ${it.idea ? 'idea' : ''}">
       <div class="q-row">
-        <button class="q-check" data-action="quest-done" data-id="${esc(id)}" aria-label="${log ? 'Zurücknehmen' : 'Erledigt'}">${log ? icon('check', 16, 3) : ''}</button>
+        <button class="q-check" data-action="quest-done" data-id="${esc(id)}" aria-label="${log ? 'Zurücknehmen' : 'Abhaken'}">${log ? icon('check', 16, 3) : ''}</button>
         <span class="q-text"><span>${esc(it.text)}</span>${meta ? `<span class="q-meta">${esc(meta)}</span>` : ''}</span>${addBtn}
       </div>${extra}</div>`;
   }).join('');
 
   const canSkip = !allDone;
-  return `<div class="quest">${label}
-    <div class="quest-title">${esc(anyDone ? 'Schön, dass du dir Zeit dafür genommen hast' : title)}</div>
-    ${anyDone ? `<div class="quest-sub">Wenn du magst, ist noch mehr drin.</div>` : !hasOwn ? `<div class="quest-sub">${esc(src.emptyText)}</div>` : ''}
+  // Geschafft, sobald eine Aktivität gemacht ist: Badge, grüner Rahmen, neue Überschrift
+  if (anyDone) label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge">${icon('check', 12, 3)}Geschafft</span></div>`;
+  return `<div class="quest ${anyDone ? 'complete' : ''}">${label}
+    <div class="quest-title">${esc(anyDone ? 'Schön, dass du dir Zeit für dich genommen hast' : title)}</div>
+    ${!anyDone && !hasOwn ? `<div class="quest-sub">${esc(src.emptyText)}</div>` : ''}
     <div class="q-items">${rows}</div>
     <div class="quest-foot">
       <span>${n ? `Diesen Monat ${n} ${n === 1 ? 'Ding' : 'Dinge'} gemacht, die dir guttun` : 'Jedes Mal zählt, ganz ohne Druck.'}</span>
@@ -2197,7 +2204,7 @@ document.addEventListener('click', e => {
       save(); renderActAdded();
       break;
     case 'delete-activity':
-      if (confirm('Diese Aktivität löschen? Bereits Erledigtes bleibt in deiner Zählung.')) {
+      if (confirm('Diese Aktivität löschen? Bereits Gemachtes bleibt in deiner Zählung.')) {
         data.lists.activities = data.lists.activities.filter(a => a.id !== id);
         save(); closeSheet(); render();
       }
