@@ -564,7 +564,7 @@ function emptyData() {
     dones: [],        // { id, text, category, date, goalId, createdAt }
     checkins: [],     // { id, ts, mood, emotions[], triggers[], note }
     gratitude: [],    // { id, text, date, createdAt }
-    reflections: {},  // 'JJJJ-MM-TT' → { mood, text, sleep, energy }
+    reflections: {},  // 'JJJJ-MM-TT' → { mood, text, updatedAt } (ältere Einträge können noch sleep/energy enthalten)
     goals: [],
     favorites: [],    // { id, text, category, goalId }
     customEmotions: [],
@@ -798,11 +798,10 @@ function renderDay(k, isToday) {
 
   html += secHead('Tagesfazit');
   if (r) {
-    const extras = [r.sleep ? `Schlaf ${r.sleep}/5` : '', r.energy ? `Energie ${r.energy}/5` : ''].filter(Boolean).join(' · ');
     html += `<div class="list">${cell({
       lead: `<span class="emoji-lead">${MOODS[r.mood - 1].emoji}</span>`,
       title: `Gesamtstimmung ${r.mood} von 5`,
-      sub: [extras, r.text ? esc(truncate(r.text, 120)) : ''].filter(Boolean).join('<br>'),
+      sub: r.text ? esc(truncate(r.text, 120)) : '',
       acc: chevron(), action: 'open-reflection', attrs: `data-day="${k}"`,
     })}</div>`;
   } else {
@@ -922,7 +921,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.6 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.7 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Fazit', 'Fazits')}</p>`;
 }
 
 /* =========================================================
@@ -1282,8 +1281,8 @@ function saveCheckin(existing) {
    10. TAGESFAZIT
    ========================================================= */
 function openReflectionSheet(k) {
-  const r = data.reflections[k] || { mood: null, text: '', sleep: null, energy: null };
-  ui.draft = { mood: r.mood, sleep: r.sleep, energy: r.energy };
+  const r = data.reflections[k] || { mood: null, text: '' };
+  ui.draft = { mood: r.mood };
   const cis = checkinsOn(k), dones = donesOn(k), grats = gratitudeOn(k);
   const avg = cis.length ? (cis.reduce((s, c) => s + c.mood, 0) / cis.length).toFixed(1).replace('.', ',') : null;
   const emoCount = {};
@@ -1300,16 +1299,13 @@ function openReflectionSheet(k) {
     </div>
     <div class="sheet-sec"><div class="sheet-label">Gesamtstimmung des Tages</div><div class="scale" id="rf-moods">${scaleButtons('mood', r.mood, true)}</div></div>
     <div class="sheet-sec"><div class="list"><textarea id="rf-text" class="field" rows="3" style="min-height:88px" placeholder="Wie war dein Tag? Dein Fazit in ein paar Sätzen …">${esc(r.text)}</textarea></div></div>
-    <div class="sheet-sec"><div class="sheet-label">Optional</div><div class="list seg-list">
-      <div class="seg-row"><span>Schlaf</span><div class="scale sm">${scaleButtons('sleep', r.sleep)}</div></div>
-      <div class="seg-row"><span>Energie</span><div class="scale sm">${scaleButtons('energy', r.energy)}</div></div></div></div>
     ${data.reflections[k] ? `<div class="sheet-sec"><div class="list">${cell({ title: 'Fazit löschen', action: 'delete-reflection', attrs: `data-day="${k}"`, cls: 'destructive' })}</div></div>` : ''}`;
   openSheet('Tagesfazit', body, () => saveReflection(k), { color: 'var(--indigo)', dimUntil: 'mood', saveLabel: 'Fazit speichern' });
 }
 
 function saveReflection(k) {
   if (!ui.draft.mood) { toast('Bitte die Gesamtstimmung wählen', false); shake($('#rf-moods')); return; }
-  data.reflections[k] = { mood: ui.draft.mood, text: $('#rf-text').value.trim(), sleep: ui.draft.sleep || null, energy: ui.draft.energy || null };
+  data.reflections[k] = { ...(data.reflections[k] || {}), mood: ui.draft.mood, text: $('#rf-text').value.trim(), updatedAt: new Date().toISOString() };
   save(); closeSheet(); render();
   toast('Tagesfazit gespeichert');
 }
@@ -1399,84 +1395,94 @@ function exportFromKey() {
   return dateKey(from);
 }
 
+// Export für KI: einheitlich pro Tag, mit Uhrzeiten, Gefühlsgruppen und Quest-Erledigungen.
+// Format bewusst stabil und gut maschinenlesbar (gleiche Feldnamen, ISO-Datum, 24-h-Zeit).
+const POSITIVE_GROUPS = ['Freude', 'Ruhe', 'Kraft'];
+const NEGATIVE_GROUPS = ['Traurigkeit', 'Angst', 'Wut', 'Scham / Schuld'];
+const emotionGroup = e => (EMOTION_GROUPS.find(g => g.items.includes(e)) || { name: 'eigene' }).name;
+// Uhrzeit nur angeben, wenn der Eintrag am selben Tag angelegt wurde (nicht nachgetragen)
+const timeIfSameDay = (iso, k) => (iso && dateKey(new Date(iso)) === k ? fmtTime(iso) : null);
+
 function buildMarkdown(fromKey) {
   const days = new Set();
   data.dones.forEach(d => days.add(d.date));
   data.checkins.forEach(c => days.add(dateKey(new Date(c.ts))));
   data.gratitude.forEach(g => days.add(g.date));
+  data.questLog.forEach(l => days.add(l.date));
   Object.keys(data.reflections).forEach(k => days.add(k));
   const sorted = [...days].filter(k => !fromKey || k >= fromKey).sort();
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'lokal';
 
   let md = `# Wellbeing-Tagebuch – Export\n\n`;
-  md += `Exportiert am ${new Date().toLocaleString('de-DE')}. Zeitraum: ${sorted.length ? sorted[0] + ' bis ' + sorted[sorted.length - 1] : 'keine Einträge'}.\n\n`;
+  md += `- Exportiert: ${dateKey()} ${fmtTime(new Date().toISOString())} (Zeitzone ${tz})\n`;
+  md += `- Zeitraum: ${sorted.length ? sorted[0] + ' bis ' + sorted[sorted.length - 1] : 'keine Einträge'} (${sorted.length} Tage mit Einträgen)\n`;
+  md += `- Format-Version: 2\n\n`;
   md += `## Aufbau der Daten (Hinweis für die KI-Auswertung)\n\n`;
-  md += `- Persönliches Wellbeing-Tagebuch einer Person, chronologisch nach Tagen.\n`;
-  md += `- **Erledigt**: Done-Liste (was geschafft wurde), mit Kategorie und ggf. zugehörigem Lebensziel.\n`;
-  md += `- **Gefühls-Check-ins**: mehrere Momentaufnahmen pro Tag mit Uhrzeit, Stimmung 1–5, gewählten Gefühlen, Auslösern und Notiz.\n`;
+  md += `- Persönliches Wellbeing-Tagebuch einer Person. Ein Abschnitt pro Tag (ISO-Datum), Einträge mit 24-h-Uhrzeit, wenn am selben Tag erfasst.\n`;
+  md += `- **Gefühls-Check-ins**: Momentaufnahmen, mehrere pro Tag. Stimmung 1–5 (1 = sehr schlecht, 3 = neutral, 5 = sehr gut), benannte Gefühle, optional Auslöser und Notiz. Sie zeigen das Auf und Ab innerhalb eines Tages.\n`;
+  md += `- **Gefühlsgruppen** in Klammern: angenehm = ${POSITIVE_GROUPS.join(', ')}; unangenehm = ${NEGATIVE_GROUPS.join(', ')}; gemischt = Sonstiges; „eigene“ = selbst formulierte Gefühle.\n`;
+  md += `- **Erledigt**: Done-Liste (was geschafft wurde, auch kleine Dinge), mit Kategorie.\n`;
   md += `- **Dankbar für**: Dankbarkeitstagebuch, beliebig viele Einträge pro Tag.\n`;
-  md += `- **Tagesfazit**: Gesamtbewertung des Tages (Stimmung 1–5), Freitext, Schlafqualität 1–5, Energie 1–5.\n`;
-  md += `- **Was mir guttut**: persönliche Liste angenehmer Aktivitäten (Verhaltensaktivierung) und per Tages-Quest erledigte Aktivitäten mit optionaler Bewertung.\n`;
-  md += `- Skala: 1 = sehr schlecht, 2 = schlecht, 3 = neutral, 4 = gut, 5 = sehr gut.\n\n`;
+  md += `- **Was mir guttut**: angenehme Aktivitäten (Verhaltensaktivierung). Pro Tag: per Tages-Quest erledigte Aktivitäten mit optionaler Bewertung 1–5 Sterne.\n`;
+  md += `- **Tagesfazit**: rückblickende Gesamtstimmung 1–5 und Freitext.\n`;
+  md += `- Fehlende Tage bedeuten: nichts eingetragen (nicht: schlechter Tag).\n\n`;
+
   if (data.goals.length) {
     md += `## Lebensziele\n\n`;
-    data.goals.forEach(g => {
-      const n = data.dones.filter(d => d.goalId === g.id && (!fromKey || d.date >= fromKey)).length;
-      md += `- **${g.title}** (${g.area}, ${GOAL_STATUS[g.status]}, ${n} Dones im Zeitraum)${g.description ? ': ' + g.description : ''}\n`;
-    });
+    data.goals.forEach(g => { md += `- **${g.title}** (${g.area}, ${GOAL_STATUS[g.status]})${g.description ? ': ' + g.description : ''}\n`; });
     md += `\n`;
   }
-  // Modul „Was mir guttut“ (eigener Abschnitt, nicht mit den Tagen verknüpft)
   const acts = data.lists.activities;
-  const qlog = data.questLog.filter(l => !fromKey || l.date >= fromKey).sort((a, b) => a.date.localeCompare(b.date));
-  if (acts.length || qlog.length) {
-    md += `## Was mir guttut (angenehme Aktivitäten)\n\n`;
-    if (acts.length) {
-      md += `**Meine Liste:**\n`;
-      acts.forEach(a => { const m = metaText(a); md += `- ${a.text}${m ? ` (${m})` : ''}\n`; });
-      md += `\n`;
-    }
-    if (qlog.length) {
-      md += `**Erledigt im Zeitraum (Tages-Quest, Bewertung 1–5 Sterne):**\n`;
-      qlog.forEach(l => {
-        const a = acts.find(x => x.id === l.itemId);
-        md += `- ${l.date}: ${a ? a.text : l.text}${l.rating ? ` – ${'★'.repeat(l.rating)}${'☆'.repeat(5 - l.rating)}` : ''}\n`;
-      });
-      md += `\n`;
-    }
+  if (acts.length) {
+    md += `## Was mir guttut – meine Liste\n\n`;
+    acts.forEach(a => { const m = metaText(a); md += `- ${a.text}${m ? ` (${m})` : ''}\n`; });
+    md += `\n`;
   }
+
   md += `## Tage\n\n`;
   for (const k of sorted) {
     md += `### ${k} (${parseKey(k).toLocaleDateString('de-DE', { weekday: 'long' })})\n\n`;
-    const dones = donesOn(k);
-    if (dones.length) {
-      md += `**Erledigt:**\n`;
-      dones.forEach(d => { md += `- ${d.text} [${d.category}]${d.goalId ? ` → Ziel: ${goalTitle(d.goalId)}` : ''}\n`; });
-      md += `\n`;
-    }
     const cis = checkinsOn(k);
+    const r = data.reflections[k];
+    if (cis.length || r) {
+      const avg = cis.length ? (cis.reduce((s, c) => s + c.mood, 0) / cis.length).toFixed(1) : null;
+      const range = cis.length > 1 ? ` (Spanne ${Math.min(...cis.map(c => c.mood))}–${Math.max(...cis.map(c => c.mood))})` : '';
+      md += `Stimmung: ${[avg ? `Check-ins Ø ${avg} aus ${cis.length}${range}` : '', r ? `Tagesfazit ${r.mood}/5` : ''].filter(Boolean).join(' · ')}\n\n`;
+    }
     if (cis.length) {
       md += `**Gefühls-Check-ins:**\n`;
       cis.forEach(c => {
-        md += `- ${fmtTime(c.ts)} Uhr – Stimmung ${c.mood}/5`;
-        if (c.emotions.length) md += ` – Gefühle: ${c.emotions.join(', ')}`;
+        md += `- ${fmtTime(c.ts)} – Stimmung ${c.mood}/5`;
+        if (c.emotions.length) md += ` – Gefühle: ${c.emotions.map(e => `${e} (${emotionGroup(e)})`).join(', ')}`;
         if (c.triggers.length) md += ` – Auslöser: ${c.triggers.join(', ')}`;
         if (c.note) md += ` – Notiz: ${c.note.replace(/\n+/g, ' ')}`;
         md += `\n`;
       });
       md += `\n`;
     }
+    const dones = donesOn(k);
+    if (dones.length) {
+      md += `**Erledigt:**\n`;
+      dones.forEach(d => { const t = timeIfSameDay(d.createdAt, k); md += `- ${t ? t + ' – ' : ''}${d.text} [${d.category}]${d.goalId ? ` → Ziel: ${goalTitle(d.goalId)}` : ''}\n`; });
+      md += `\n`;
+    }
     const grats = gratitudeOn(k);
     if (grats.length) {
       md += `**Dankbar für:**\n`;
-      grats.forEach(g => { md += `- ${g.text}\n`; });
+      grats.forEach(g => { const t = timeIfSameDay(g.createdAt, k); md += `- ${t ? t + ' – ' : ''}${g.text}\n`; });
       md += `\n`;
     }
-    const r = data.reflections[k];
-    if (r) {
-      md += `**Tagesfazit:** Gesamtstimmung ${r.mood}/5`;
-      if (r.sleep) md += `, Schlaf ${r.sleep}/5`;
-      if (r.energy) md += `, Energie ${r.energy}/5`;
+    const qlog = data.questLog.filter(l => l.date === k);
+    if (qlog.length) {
+      md += `**Was mir guttut (Tages-Quest erledigt):**\n`;
+      qlog.forEach(l => {
+        const a = acts.find(x => x.id === l.itemId);
+        md += `- ${fmtTime(l.doneAt)} – ${a ? a.text : l.text}${l.rating ? ` – ${l.rating}/5 Sterne` : ''}\n`;
+      });
       md += `\n`;
+    }
+    if (r) {
+      md += `**Tagesfazit:** Gesamtstimmung ${r.mood}/5\n`;
       if (r.text) md += `> ${r.text.replace(/\n+/g, '\n> ')}\n`;
       md += `\n`;
     }
