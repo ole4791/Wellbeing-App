@@ -348,7 +348,7 @@ html.sheet-open .bottom, html.sheet-open .navbar { opacity: 0; }
 .hero-quote { margin-top: 6px; }
 .rv-action .cell-title { color: var(--indigo) !important; }
 /* Quest geschafft (Grün nur für diesen Zustand) */
-.q-badge { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 7px; border-radius: 999px; background: var(--green); color: #fff; font-size: 12px; text-transform: none; letter-spacing: 0; }
+.q-badge { margin-left: auto; white-space: nowrap; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px 3px 7px; border-radius: 999px; background: var(--green); color: #fff; font-size: 12px; text-transform: none; letter-spacing: 0; }
 .quest.complete { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--green) 50%, transparent); }
 .quest.complete .q-item.done .q-check { background: var(--green); border-color: var(--green); }
 .quest.complete .q-item:not(.done) { opacity: .6; }
@@ -1016,7 +1016,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.12 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.13 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
 }
 
 /* =========================================================
@@ -2077,10 +2077,10 @@ function renderQuestCard() {
   }).join('');
 
   // Geschafft, sobald eins gemacht ist: Badge, grüner Rahmen, neue Überschrift.
-  // Alle drei: „Alle Tages-Quests geschafft“ mit Flamme (nur für heute, wird nicht gezählt oder angekündigt)
+  // Alle drei: „Alle geschafft“ mit Flamme (nur für heute, wird nicht gezählt oder angekündigt)
   const fire = allDone && q.suggestions.length >= 3;
   if (fire) {
-    label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge fire ${ui.fireAnim !== k ? 'pop' : ''}">🔥 Alle Tages-Quests geschafft</span></div>`;
+    label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge fire ${ui.fireAnim !== k ? 'pop' : ''}">🔥 Alle geschafft</span></div>`;
     ui.fireAnim = k;
   } else if (anyDone) {
     label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge">${icon('check', 12, 3)}Geschafft</span></div>`;
