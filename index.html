@@ -740,7 +740,7 @@ const checkinsOn = k => data.checkins.filter(c => dateKey(new Date(c.ts)) === k)
 const gratitudeOn = k => data.gratitude.filter(g => g.date === k).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
 // Tagesstimmung: aus den Check-ins (Momentaufnahmen); nur ohne Check-ins aus dem Tagesrückblick
 function dayMood(k) {
-  const cs = checkinsOn(k);
+  const cs = checkinsOn(k).filter(c => c.mood);
   if (cs.length) return Math.round(cs.reduce((s, c) => s + c.mood, 0) / cs.length);
   const r = data.reflections[k];
   return r && r.mood ? r.mood : null;
@@ -885,7 +885,7 @@ function renderDay(k, isToday) {
 
   html += secHead('Gefühle', cis.length || null, isToday ? 'new-checkin' : '', null, 'var(--c-feel)');
   html += `<div class="list">${cis.length ? cis.map(c => cell({
-    lead: `<span class="emoji-lead">${MOODS[c.mood - 1].emoji}</span>`,
+    lead: c.mood ? `<span class="emoji-lead">${MOODS[c.mood - 1].emoji}</span>` : badge('heart', 'var(--c-feel)'),
     title: c.emotions.length ? c.emotions.map(esc).join(', ') : `Stimmung ${c.mood} von 5`,
     sub: `${fmtTime(c.ts)} Uhr${c.triggers.length ? ' · ' + c.triggers.map(esc).join(', ') : ''}${c.note ? ' · ' + esc(truncate(c.note, 36)) : ''}`,
     acc: chevron(), action: 'edit-checkin', attrs: `data-id="${c.id}"`,
@@ -1016,7 +1016,7 @@ function renderMore() {
     </div>
     <p class="group-foot">Letztes Backup: ${s.lastBackup ? new Date(s.lastBackup).toLocaleDateString('de-DE') : 'noch nie'}. Deine Daten liegen nur auf diesem iPhone und verschwinden, wenn du die App vom Home-Bildschirm löschst.</p>
 
-    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.11 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
+    <p class="group-foot" style="text-align:center;margin-top:28px">Wellbeing 1.12 · ${plural(data.dones.length, 'Done', 'Dones')} · ${plural(data.checkins.length, 'Check-in', 'Check-ins')} · ${data.gratitude.length} Dankbarkeit · ${plural(Object.keys(data.reflections).length, 'Rückblick', 'Rückblicke')}</p>`;
 }
 
 /* =========================================================
@@ -1041,7 +1041,7 @@ function openSheet(title, body, onSave, { saveLabel = 'Speichern', cancel = true
   btn.textContent = saveLabel;
   btn.style.setProperty('--c', color);
   btn.dataset.dimUntil = dimUntil || '';
-  btn.classList.toggle('dim', !!dimUntil && !ui.draft[dimUntil]);
+  btn.classList.toggle('dim', !!dimUntil && !draftFilled(dimUntil));
   $('.sheet-foot').style.display = onSave ? '' : 'none';
   $('#sheet-cancel').style.visibility = cancel ? 'visible' : 'hidden';
   sheetSave = onSave;
@@ -1058,10 +1058,11 @@ function openSheet(title, body, onSave, { saveLabel = 'Speichern', cancel = true
   $('#backdrop').classList.add('open');
 }
 
-// Speichern-Button aktivieren, sobald das Pflichtfeld (z. B. Stimmung) gesetzt ist
+// Speichern-Button aktivieren, sobald das Pflichtfeld (z. B. ein Gefühl) gesetzt ist
+const draftFilled = f => { const v = ui.draft[f]; return v instanceof Set ? v.size > 0 : !!v; };
 function updateSaveState() {
   const btn = $('#sheet-save'), f = btn.dataset.dimUntil;
-  btn.classList.toggle('dim', !!f && !ui.draft[f]);
+  btn.classList.toggle('dim', !!f && !draftFilled(f));
 }
 
 function closeSheet() {
@@ -1345,19 +1346,20 @@ function openCheckinSheet(existing = null) {
   ui.draft = { mood: c.mood, emotions: new Set(c.emotions), triggers: new Set(c.triggers),
     emoTab: frequentEmotions(1).length ? 'Häufig' : EMOTION_GROUPS[0].name };
   const body = `
-    <div class="sheet-label" style="margin-top:4px">Wie geht es dir gerade?</div>
-    <div class="scale" id="ci-moods">${scaleButtons('mood', c.mood, true)}</div>
-    <div class="sheet-sec"><div class="sheet-label">Was fühlst du?</div>
+    <div class="sheet-label" style="margin-top:4px">Was fühlst du gerade?</div>
+    <div id="ci-feel-block">
       <div class="tabs" id="emo-tabs">${renderEmoTabs()}</div>
       <div class="emo-area" id="ci-emotions">${renderEmoArea()}</div>
       <div class="selected-line" id="ci-selected">${renderSelectedLine()}</div></div>
+    <div class="sheet-sec"><div class="sheet-label">Stimmung <span class="opt">(optional)</span></div>
+      <div class="scale" id="ci-moods">${scaleButtons('mood', c.mood, true)}</div></div>
     <div class="sheet-sec"><div class="sheet-label">Auslöser <span class="opt">(optional)</span></div>
       <div class="hscroll">${TRIGGERS.map(t => chip(t, ui.draft.triggers.has(t), `data-action="toggle-trigger" data-value="${esc(t)}"`)).join('')}</div></div>
     <div class="sheet-sec"><div class="list"><textarea id="ci-note" class="field" rows="2" style="min-height:72px" placeholder="Notiz (optional): Was geht dir durch den Kopf?">${esc(c.note)}</textarea></div></div>
     ${existing ? `<p class="sheet-note">Eingetragen am ${esc(fmtDayLong(dateKey(new Date(c.ts))))} um ${fmtTime(c.ts)} Uhr</p>
       <div class="sheet-sec"><div class="list">${cell({ title: 'Check-in löschen', action: 'delete-checkin', attrs: `data-id="${existing.id}"`, cls: 'destructive' })}</div></div>` : ''}`;
   openSheet(existing ? 'Check-in bearbeiten' : 'Gefühl', body, () => saveCheckin(existing),
-    { color: 'var(--c-feel)', dimUntil: 'mood', saveLabel: existing ? 'Speichern' : 'Check-in speichern', help: HELP.feeling });
+    { color: 'var(--c-feel)', dimUntil: 'emotions', saveLabel: existing ? 'Speichern' : 'Check-in speichern', help: HELP.feeling });
 }
 
 function addCustomEmotion(name) {
@@ -1368,10 +1370,10 @@ function addCustomEmotion(name) {
 }
 
 function saveCheckin(existing) {
-  if (!ui.draft.mood) { toast('Bitte zuerst die Stimmung wählen', false); shake($('#ci-moods')); $('#sheet-body').scrollTop = 0; return; }
   const customEl = $('#ci-custom');
   if (customEl && customEl.value.trim()) addCustomEmotion(customEl.value);
-  const entry = { mood: ui.draft.mood, emotions: [...ui.draft.emotions], triggers: [...ui.draft.triggers], note: $('#ci-note').value.trim() };
+  if (!ui.draft.emotions.size) { toast('Bitte zuerst ein Gefühl wählen', false); shake($('#ci-feel-block')); $('#sheet-body').scrollTop = 0; return; }
+  const entry = { mood: ui.draft.mood || null, emotions: [...ui.draft.emotions], triggers: [...ui.draft.triggers], note: $('#ci-note').value.trim() };
   if (existing) Object.assign(existing, entry);
   else data.checkins.push({ id: uid(), ts: new Date().toISOString(), ...entry });
   save(); closeSheet(); render();
@@ -1391,8 +1393,8 @@ function openReflectionSheet(k) {
 
   // Rückblick: Gefühle (als Momente), Dankbarkeit, Dones – gleichrangig
   const moments = cis.length ? `
-      <div class="curve">${cis.map(c => `<span><b style="height:${c.mood * 20}%;background:${MOOD_COLORS[c.mood]}"></b><small>${fmtTime(c.ts)}</small></span>`).join('')}</div>
-      ${cis.map(c => `<div class="rv-row"><span class="rv-time">${fmtTime(c.ts)}</span><span class="rv-emo">${MOODS[c.mood - 1].emoji}</span><span>${c.emotions.length ? c.emotions.map(esc).join(', ') : `Stimmung ${c.mood} von 5`}</span></div>`).join('')}`
+      <div class="curve">${cis.filter(c => c.mood).map(c => `<span><b style="height:${c.mood * 20}%;background:${MOOD_COLORS[c.mood]}"></b><small>${fmtTime(c.ts)}</small></span>`).join('')}</div>
+      ${cis.map(c => `<div class="rv-row"><span class="rv-time">${fmtTime(c.ts)}</span><span class="rv-emo">${c.mood ? MOODS[c.mood - 1].emoji : '·'}</span><span>${c.emotions.length ? c.emotions.map(esc).join(', ') : `Stimmung ${c.mood} von 5`}</span></div>`).join('')}`
     : `<div class="rv-empty">Keine Gefühls-Check-ins ${isToday ? 'heute' : 'an diesem Tag'}.</div>`;
   const list = (items, empty) => items.length
     ? items.slice(0, MAX).map(t => `<div class="rv-row"><span class="rv-dot"></span><span>${esc(t)}</span></div>`).join('') + more(items.length)
@@ -1532,7 +1534,7 @@ function buildMarkdown(fromKey) {
   md += `- Format-Version: 2\n\n`;
   md += `## Aufbau der Daten (Hinweis für die KI-Auswertung)\n\n`;
   md += `- Persönliches Wellbeing-Tagebuch einer Person. Ein Abschnitt pro Tag (ISO-Datum), Einträge mit 24-h-Uhrzeit, wenn am selben Tag erfasst.\n`;
-  md += `- **Gefühls-Check-ins**: Momentaufnahmen, mehrere pro Tag. Stimmung 1–5 (1 = sehr schlecht, 3 = neutral, 5 = sehr gut), benannte Gefühle, optional Auslöser und Notiz. Sie zeigen das Auf und Ab innerhalb eines Tages.\n`;
+  md += `- **Gefühls-Check-ins**: Momentaufnahmen, mehrere pro Tag. Benannte Gefühle (Kern), optional Stimmung 1–5 (1 = sehr schlecht, 3 = neutral, 5 = sehr gut), Auslöser und Notiz. Sie zeigen das Auf und Ab innerhalb eines Tages.\n`;
   md += `- **Gefühlsgruppen** in Klammern: angenehm = ${POSITIVE_GROUPS.join(', ')}; unangenehm = ${NEGATIVE_GROUPS.join(', ')}; gemischt = Sonstiges; „eigene“ = selbst formulierte Gefühle.\n`;
   md += `- **Done**: Done-Liste (was geschafft wurde, auch kleine Dinge), mit Kategorie.\n`;
   md += `- **Dankbar für**: Dankbarkeitstagebuch, beliebig viele Einträge pro Tag.\n`;
@@ -1558,16 +1560,18 @@ function buildMarkdown(fromKey) {
     const cis = checkinsOn(k);
     const r = data.reflections[k];
     if (cis.length || r) {
-      const avg = cis.length ? (cis.reduce((s, c) => s + c.mood, 0) / cis.length).toFixed(1) : null;
-      const range = cis.length > 1 ? ` (Spanne ${Math.min(...cis.map(c => c.mood))}–${Math.max(...cis.map(c => c.mood))})` : '';
-      const line = [avg ? `Check-ins Ø ${avg} aus ${cis.length}${range}` : '', r && r.mood ? `Rückblick ${r.mood}/5` : ''].filter(Boolean).join(' · ');
+      const rated = cis.filter(c => c.mood);
+      const avg = rated.length ? (rated.reduce((s, c) => s + c.mood, 0) / rated.length).toFixed(1) : null;
+      const range = rated.length > 1 ? ` (Spanne ${Math.min(...rated.map(c => c.mood))}–${Math.max(...rated.map(c => c.mood))})` : '';
+      const line = [avg ? `Check-ins Ø ${avg} aus ${rated.length}${range}` : '', r && r.mood ? `Rückblick ${r.mood}/5` : ''].filter(Boolean).join(' · ');
       if (line) md += `Stimmung: ${line}\n\n`;
     }
     if (cis.length) {
       md += `**Gefühls-Check-ins:**\n`;
       cis.forEach(c => {
-        md += `- ${fmtTime(c.ts)} – Stimmung ${c.mood}/5`;
+        md += `- ${fmtTime(c.ts)}`;
         if (c.emotions.length) md += ` – Gefühle: ${c.emotions.map(e => `${e} (${emotionGroup(e)})`).join(', ')}`;
+        if (c.mood) md += ` – Stimmung ${c.mood}/5`;
         if (c.triggers.length) md += ` – Auslöser: ${c.triggers.join(', ')}`;
         if (c.note) md += ` – Notiz: ${c.note.replace(/\n+/g, ' ')}`;
         md += `\n`;
@@ -2073,10 +2077,10 @@ function renderQuestCard() {
   }).join('');
 
   // Geschafft, sobald eins gemacht ist: Badge, grüner Rahmen, neue Überschrift.
-  // Alle drei: „Feuer und Flamme“ (nur für heute, wird nicht gezählt oder angekündigt)
+  // Alle drei: „Alle Tages-Quests geschafft“ mit Flamme (nur für heute, wird nicht gezählt oder angekündigt)
   const fire = allDone && q.suggestions.length >= 3;
   if (fire) {
-    label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge fire ${ui.fireAnim !== k ? 'pop' : ''}">🔥 Feuer und Flamme</span></div>`;
+    label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge fire ${ui.fireAnim !== k ? 'pop' : ''}">🔥 Alle Tages-Quests geschafft</span></div>`;
     ui.fireAnim = k;
   } else if (anyDone) {
     label = `<div class="quest-label">${icon(src.icon, 15, 2.2)}Tages-Quest<span class="q-badge">${icon('check', 12, 3)}Geschafft</span></div>`;
@@ -2262,7 +2266,7 @@ document.addEventListener('click', e => {
     case 'toggle-help': { const h = $('#help-card'); if (h) { h.hidden = !h.hidden; el.classList.toggle('on', !h.hidden); if (!h.hidden) $('#sheet-body').scrollTop = 0; } break; }
     case 'pick-scale': {
       const v = Number(value), field = el.dataset.field;
-      const newVal = el.classList.contains('on') && field !== 'mood' ? null : v;
+      const newVal = el.classList.contains('on') ? null : v;
       ui.draft[field] = newVal;
       el.parentElement.querySelectorAll('.scale-btn').forEach(b => b.classList.toggle('on', newVal !== null && b === el));
       updateSaveState();
@@ -2316,6 +2320,7 @@ document.addEventListener('click', e => {
       el.classList.toggle('on', on);
       $('#emo-tabs').innerHTML = renderEmoTabs();
       $('#ci-selected').innerHTML = renderSelectedLine();
+      updateSaveState();
       break;
     }
     case 'emo-tab': ui.draft.emoTab = value; $('#emo-tabs').innerHTML = renderEmoTabs(); $('#ci-emotions').innerHTML = renderEmoArea(); break;
@@ -2329,7 +2334,7 @@ document.addEventListener('click', e => {
       const input = $('#ci-custom');
       if (!input.value.trim()) { focusNoScroll(input); break; }
       addCustomEmotion(input.value); input.value = '';
-      refreshEmotions();
+      refreshEmotions(); updateSaveState();
       break;
     }
     case 'delete-checkin':
